@@ -271,7 +271,7 @@ def clear_order_flag(obj):
 
 
 def update_selection_order():
-    if not bpy.context.selected_objects:
+    if not (getattr(bpy.context, 'selected_objects', None) or list(bpy.context.view_layer.objects.selected)):
         for o in bpy.data.objects:
             clear_order_flag(o)
         return
