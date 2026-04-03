@@ -1,7 +1,7 @@
 import bpy
 
 from .renaming_operators import switch_to_edit_mode
-from ..operators.renaming_utilities import get_renaming_list, trim_string, call_renaming_popup, call_error_popup
+from ..operators.renaming_utilities import get_renaming_list, trim_string, call_renaming_popup, call_error_popup, rename_data_if_enabled
     
 class VIEW3D_OT_trim_string(bpy.types.Operator):
     bl_idname = "renaming.trim_string"
@@ -27,6 +27,7 @@ class VIEW3D_OT_trim_string(bpy.types.Operator):
                     old_name = entity.name
                     new_name = trim_string(entity.name, wm.renaming_trim_indices)
                     entity.name = new_name
+                    rename_data_if_enabled(wm, entity)
                     msg.add_message(old_name, entity.name)
         
         call_renaming_popup(context)

@@ -50,6 +50,7 @@ def update_suf_pre_key(self, context):
 
 def update_panel_category(self, context):
     """Update panel tab for collider tools"""
+    from ..ui.renaming_panels import VIEW3D_PT_tools_renaming_panel, VIEW3D_PT_tools_type_suffix
 
     panels = [
         VIEW3D_PT_tools_renaming_panel,
@@ -69,6 +70,7 @@ def update_panel_category(self, context):
 
 
 def toggle_suffix_prefix_panel(self, context):
+    from ..ui.renaming_panels import VIEW3D_PT_tools_type_suffix
     if self.renaming_show_suffix_prefix_panel:
         bpy.utils.register_class(VIEW3D_PT_tools_type_suffix)
     else:

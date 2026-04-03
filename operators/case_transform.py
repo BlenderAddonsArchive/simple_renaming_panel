@@ -3,7 +3,7 @@ import re
 import bpy
 
 from .renaming_operators import switch_to_edit_mode
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled
 
 
 # ---------------------------------------------------------------------------
@@ -90,6 +90,7 @@ class _CaseOperatorBase(bpy.types.Operator):
             if entity is not None:
                 old_name = entity.name
                 entity.name = self._transform(entity.name)
+                rename_data_if_enabled(scene, entity)
                 msg.add_message(old_name, entity.name)
 
         call_renaming_popup(context)

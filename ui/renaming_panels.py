@@ -32,6 +32,7 @@ def draw_renaming_panel(layout, context):
     # SELECTED
     if str(scene.renaming_object_types) == 'OBJECT':
         layout.prop(scene, "renaming_object_types_specified", expand=True)
+        layout.prop(scene, "renaming_also_rename_data")
     if str(scene.renaming_object_types) in types_of_selected:
         layout.prop(scene, "renaming_only_selection", text="Only Of Selected Objects")
     elif str(scene.renaming_object_types) in types_selected:

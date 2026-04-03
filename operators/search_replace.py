@@ -3,7 +3,7 @@ import re
 import bpy
 
 from .renaming_operators import switch_to_edit_mode
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled
 from ..variable_replacer.variable_replacer import VariableReplacer
 from .case_transform import to_upper, to_lower, upper_first, lower_first
 
@@ -133,15 +133,18 @@ class VIEW3D_OT_search_and_replace(bpy.types.Operator):
                             if wm.renaming_matchcase:
                                 new_name = str(entity.name).replace(searchReplaced, replaceReplaced)
                                 entity.name = new_name
+                                rename_data_if_enabled(wm, entity)
                                 msg.add_message(oldName, entity.name)
                             else:
                                 replaceSearch = re.compile(re.escape(searchReplaced), re.IGNORECASE)
                                 new_name = replaceSearch.sub(replaceReplaced, entity.name)
                                 entity.name = new_name
+                                rename_data_if_enabled(wm, entity)
                                 msg.add_message(oldName, entity.name)
                         else:  # Use regex
                             new_name = regex_case_sub(searchReplaced, replaceReplaced, str(entity.name))
                             entity.name = new_name
+                            rename_data_if_enabled(wm, entity)
                             msg.add_message(oldName, entity.name)
 
         call_renaming_popup(context)

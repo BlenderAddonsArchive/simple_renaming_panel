@@ -263,6 +263,13 @@ def get_sorted_objects_z(objects):
     return sorted_objects
 
 
+def rename_data_if_enabled(scene, entity):
+    if scene.renaming_also_rename_data and \
+            scene.renaming_object_types in ('OBJECT', 'ADDOBJECTS'):
+        if hasattr(entity, 'data') and entity.data is not None:
+            entity.data.name = entity.name
+
+
 def clear_order_flag(obj):
     try:
         del obj["selection_order"]

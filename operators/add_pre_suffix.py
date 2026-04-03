@@ -1,7 +1,7 @@
 import bpy
 
 from .renaming_operators import switch_to_edit_mode
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled
 from ..variable_replacer.variable_replacer import VariableReplacer
 
 
@@ -34,6 +34,7 @@ class VIEW3D_OT_add_suffix(bpy.types.Operator):
                         oldName = entity.name
                         new_name = entity.name + suffix
                         entity.name = new_name
+                        rename_data_if_enabled(wm, entity)
                         msg.add_message(oldName, entity.name)
         else:
             msg.add_message(None, None, "Insert Valid String")
@@ -72,6 +73,7 @@ class VIEW3D_OT_add_prefix(bpy.types.Operator):
                         oldName = entity.name
                         new_name = pre + entity.name
                         entity.name = new_name
+                        rename_data_if_enabled(wm, entity)
                         msg.add_message(oldName, entity.name)
 
         call_renaming_popup(context)

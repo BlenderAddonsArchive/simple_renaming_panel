@@ -3,7 +3,7 @@ import bpy
 from .renaming_operators import getAllVertexGroups, getAllAttributes, getAllBones, getAllModifiers, getAllUvMaps, \
     getAllColorAttributes, getAllParticleNames, getAllParticleSettingsNames, getAllDataNames, getAllShapeKeys
 from .renaming_operators import switch_to_edit_mode, numerate_entity_name
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled
 from ..variable_replacer.variable_replacer import VariableReplacer
 
 
@@ -77,6 +77,7 @@ class VIEW3D_OT_replace_name(bpy.types.Operator):
 
                         if not scene.renaming_use_enumerate:
                             entity.name = replaceName
+                            rename_data_if_enabled(scene, entity)
                             msg.add_message(oldName, entity.name)
 
                         else:  # if scene.renaming_use_enumerate == True
@@ -145,6 +146,7 @@ class VIEW3D_OT_replace_name(bpy.types.Operator):
 
                             try:
                                 entity.name = new_name
+                                rename_data_if_enabled(scene, entity)
                                 msg.add_message(oldName, entity.name)
                             except AttributeError:
                                 print("Attribute {} is read only".format(new_name))
