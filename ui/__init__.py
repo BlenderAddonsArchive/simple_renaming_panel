@@ -43,6 +43,8 @@ def register():
 def unregister():
     from bpy.utils import unregister_class
 
+    VIEW3D_PT_tools_type_suffix.remove(panel_func)
+
     for cls in reversed(classes):
         unregister_class(cls)
 
