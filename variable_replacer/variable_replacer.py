@@ -70,6 +70,9 @@ class VariableReplacer:
             inputText = re.sub(r'@m', cls.getData(entity), inputText)  # data
             inputText = re.sub(r'@c', cls.getCollection(entity), inputText)  # collection
 
+        if wm.renaming_object_types in ('UVMAPS', 'MATERIAL', 'BONE', 'MODIFIERS', 'SHAPEKEYS'):
+            inputText = re.sub(r'@o', cls.getOwnerObjectName(entity), inputText)
+
         # IMAGES #
         if wm.renaming_object_types == 'IMAGE':
             inputText = re.sub(r'@r', 'RESOLUTION', inputText)
@@ -125,26 +128,24 @@ class VariableReplacer:
 
     @classmethod
     def getfileName(cls, context):
-        scn = context.scene
-
         if bpy.data.is_saved:
             filename = bpy.path.display_name(context.blend_data.filepath)
         else:
             filename = "UNSAVED"
-            # scn.renaming_messages.add_message(oldName, entity.name)
+            context.scene.renaming_error_messages.add_message(
+                "@f variable: file is unsaved, replaced with 'UNSAVED'", isError=False
+            )
         return filename
 
     @classmethod
     def getDateName(cls):
-        t = time.localtime()
-        t = time.mktime(t)
-        return time.strftime("%d%b%Y", time.gmtime(t))
+        date_format = cls.addon_prefs.date_format if cls.addon_prefs else "%d%b%Y"
+        return time.strftime(date_format, time.localtime())
 
     @classmethod
     def getTimeName(cls):
-        t = time.localtime()
-        t = time.mktime(t)
-        return time.strftime("%H:%M", time.gmtime(t))
+        time_format = cls.addon_prefs.time_format if cls.addon_prefs else "%H%M"
+        return time.strftime(time_format, time.localtime())
 
     @classmethod
     def getActive(cls, context):
@@ -161,21 +162,36 @@ class VariableReplacer:
 
     @classmethod
     def getType(cls, entity):
-        return str(entity.type)
+        if entity is None:
+            return "NO_TYPE"
+        try:
+            return str(entity.type)
+        except AttributeError:
+            return "NO_TYPE"
 
     @classmethod
     def getParent(cls, entity):
-        if entity.parent is not None:
-            return str(entity.parent.name)
-        else:
-            return entity.name
+        if entity is None:
+            return "NO_PARENT"
+        try:
+            if entity.parent is not None:
+                return str(entity.parent.name)
+            else:
+                return entity.name
+        except AttributeError:
+            return "NO_PARENT"
 
     @classmethod
     def getData(cls, entity):
-        if entity.data is not None:
-            return str(entity.data.name)
-        else:
-            return entity.name
+        if entity is None:
+            return "NO_DATA"
+        try:
+            if entity.data is not None:
+                return str(entity.data.name)
+            else:
+                return entity.name
+        except AttributeError:
+            return "NO_DATA"
 
     @classmethod
     def getCollection(cls, entity):
@@ -187,3 +203,36 @@ class VariableReplacer:
                 collectionew_names += collection.name
 
         return collectionew_names
+
+    @classmethod
+    def getOwnerObjectName(cls, entity):
+        """Find the owner object name for entities that belong to an object (UV maps, bones, modifiers, shape keys, materials)"""
+        id_data = getattr(entity, 'id_data', None)
+        if id_data is None:
+            return ""
+
+        # Modifier, vertex group, particle system, pose bone — id_data is the Object directly
+        if id_data.bl_rna.identifier == 'Object':
+            return id_data.name
+
+        # Shape key — id_data is a Key datablock
+        if id_data.bl_rna.identifier == 'Key':
+            for obj in bpy.data.objects:
+                if obj.data and hasattr(obj.data, 'shape_keys') and obj.data.shape_keys is id_data:
+                    return obj.name
+            return ""
+
+        # Material — is its own ID datablock, search objects by material slot
+        if id_data.bl_rna.identifier == 'Material':
+            for obj in bpy.data.objects:
+                for slot in obj.material_slots:
+                    if slot.material is id_data:
+                        return obj.name
+            return ""
+
+        # UV layer, bone — id_data is a Mesh or Armature datablock
+        for obj in bpy.data.objects:
+            if obj.data is id_data:
+                return obj.name
+
+        return ""

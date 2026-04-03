@@ -163,6 +163,17 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
         default='',
     )
 
+    date_format: StringProperty(
+        name="Date Format",
+        description="strftime format string for the @d variable (e.g. %d%b%Y → 03Apr2026)",
+        default="%d%b%Y",
+    )
+    time_format: StringProperty(
+        name="Time Format",
+        description="strftime format string for the @i variable (e.g. %H%M → 1430). Avoid colons — they are invalid in filenames on Windows",
+        default="%H%M",
+    )
+
     renaming_show_suffix_prefix_panel: bpy.props.BoolProperty(
         name="Prefix/Suffix by Type Panel",
         description="Enable or disable the Prefix/Suffix by Type Panel",
@@ -204,6 +215,11 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
         "renaming_user1",
         "renaming_user2",
         "renaming_user3"
+    ]
+
+    props_date_time = [
+        "date_format",
+        "time_format",
     ]
 
     renaming_panel_type: bpy.props.StringProperty(
@@ -323,6 +339,13 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
             row = box.row()
             row.label(text='Numerate')
             for propName in self.props_numerate:
+                row = box.row()
+                row.prop(self, propName)
+
+            box = layout.box()
+            row = box.row()
+            row.label(text='Date & Time Variables')
+            for propName in self.props_date_time:
                 row = box.row()
                 row.prop(self, propName)
 

@@ -31,9 +31,13 @@ class RENAMING_MT_variableMenu(bpy.types.Menu):
             layout.operator("object.renaming_multivariables", text="PARENT").renaming_variables = "PARENT"
             layout.operator("object.renaming_multivariables", text="DATA").renaming_variables = "DATA"
             layout.operator("object.renaming_multivariables", text="ACTIVE").renaming_variables = "ACTIVE"
-            layout.operator("object.renaming_multivariables", text='FILE').renaming_variables = 'OBJECT'
+            layout.operator("object.renaming_multivariables", text='OBJECT').renaming_variables = 'OBJECT'
             layout.operator("object.renaming_multivariables", text="TYPE").renaming_variables = "TYPE"
             layout.operator("object.renaming_multivariables", text="COLLECTION").renaming_variables = "COLLECTION"
+
+        if wm.renaming_object_types in ('UVMAPS', 'MATERIAL', 'BONE', 'MODIFIERS', 'SHAPEKEYS'):
+            layout.separator()
+            layout.operator("object.renaming_multivariables", text="OBJECT").renaming_variables = "OBJECT"
 
 
 class VIEW3D_OT_inputVariables(bpy.types.Operator):
