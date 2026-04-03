@@ -33,7 +33,8 @@ enumObjectTypes = [('EMPTY', "", "Rename empty objects", 'OUTLINER_OB_EMPTY', 1)
                    ('META', "", "Rename metaball objects", 'OUTLINER_OB_META', 1024),
                    ('SPEAKER', "", "Rename empty speakers", 'OUTLINER_OB_SPEAKER', 2048),
                    ('LIGHT_PROBE', "", "Rename mesh lightpropes", 'OUTLINER_OB_LIGHTPROBE', 4096),
-                   ('VOLUME', "", "Rename mesh volumes", 'OUTLINER_OB_VOLUME', 8192)]
+                   ('VOLUME', "", "Rename mesh volumes", 'OUTLINER_OB_VOLUME', 8192),
+                   ('POINTCLOUD', "", "Rename point cloud objects", 'OUTLINER_OB_POINTCLOUD', 16384)]
 
 enumObjectTypesAdd = [('SPEAKER', "", "Rename empty speakers", 'OUTLINER_OB_SPEAKER', 1),
                       ('LIGHT_PROBE', "", "Rename mesh lightpropes", 'OUTLINER_OB_LIGHTPROBE', 2)]
@@ -130,7 +131,8 @@ def register():
                                                             options={'ENUM_FLAG'},
                                                             default={'CURVE', 'LATTICE', 'SURFACE', 'MESH',
                                                                      'ARMATURE', 'LIGHT', 'CAMERA', 'EMPTY', 'GPENCIL',
-                                                                     'FONT', 'SPEAKER', 'LIGHT_PROBE', 'VOLUME'}
+                                                                     'FONT', 'SPEAKER', 'LIGHT_PROBE', 'VOLUME',
+                                                                     'POINTCLOUD'}
                                                             )
 
     id_store.renaming_sort_enum = EnumProperty(

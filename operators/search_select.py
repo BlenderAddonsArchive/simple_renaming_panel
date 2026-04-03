@@ -74,7 +74,7 @@ class VIEW3D_OT_search_and_select(VIEW3D_OT_naming):
             if bpy.context.mode == 'POSE':
                 bpy.ops.pose.select_all(action='DESELECT')
                 for bone in selectionList:
-                    bone.select = True
+                    bone.bone.select = True
 
             elif bpy.context.mode == 'EDIT_ARMATURE':
                 bpy.ops.armature.select_all(action='DESELECT')

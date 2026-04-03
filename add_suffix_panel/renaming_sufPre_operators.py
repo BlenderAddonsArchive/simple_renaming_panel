@@ -266,6 +266,18 @@ class VIEW3D_OT_add_type_suf_pre(bpy.types.Operator):
                           icon='OUTLINER_OB_META')
         return
 
+    def pointcloud(self):
+        context = self.context
+        wm = context.scene
+        obj_list = []
+
+        for obj in self.get_selection_all():
+            if obj.type == 'POINTCLOUD':
+                obj_list.append(obj)
+        self.rename_suffix_prefix(obj_list, pre_suffix=wm.renaming_suffix_prefix_pointcloud, object_type='POINTCLOUD',
+                          icon='OUTLINER_OB_POINTCLOUD')
+        return
+
     def collection(self):
         context = self.context
         wm = context.scene
@@ -303,6 +315,7 @@ class VIEW3D_OT_add_type_suf_pre(bpy.types.Operator):
         self.metaball()
         self.collection()
         self.bone()
+        self.pointcloud()
         self.material()
         self.data()
 

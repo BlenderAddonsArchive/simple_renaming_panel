@@ -294,6 +294,10 @@ class VIEW3D_PT_tools_type_suffix(bpy.types.Panel):
         row.operator('renaming.add_suffix_prefix_by_type', text="Light Probes").option = 'lightprops'
 
         row = col.row()
+        row.prop(scene, "renaming_suffix_prefix_pointcloud", text="")
+        row.operator('renaming.add_suffix_prefix_by_type', text="Point Clouds").option = 'pointcloud'
+
+        row = col.row()
         row.operator('renaming.add_suffix_prefix_by_type', text="Rename All").option = 'all'
 
 
@@ -380,6 +384,7 @@ class AddPresetRenamingPresets(AddPresetBase, Operator):
         "scene.renaming_suffix_prefix_bone",
         "scene.renaming_suffix_prefix_speakers",
         "scene.renaming_suffix_prefix_lightprops",
+        "scene.renaming_suffix_prefix_pointcloud",
     ]
 
     # where to store the preset
