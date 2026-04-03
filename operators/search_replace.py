@@ -121,6 +121,14 @@ class VIEW3D_OT_search_and_replace(bpy.types.Operator):
         msg = wm.renaming_messages  # variable to save messages
 
         VariableReplacer.reset()
+        VariableReplacer.prepare(context)
+
+        # When the search string contains no @ variables it is the same for
+        # every entity, so the case-insensitive pattern can be compiled once.
+        search_has_variables = '@' in searchName
+        static_pattern = None
+        if not wm.renaming_useRegex and not wm.renaming_matchcase and not search_has_variables and searchName != '':
+            static_pattern = re.compile(re.escape(searchName), re.IGNORECASE)
 
         if len(renaming_list) > 0:
             for entity in renaming_list:  # iterate over all objects that are to be renamed
@@ -132,20 +140,14 @@ class VIEW3D_OT_search_and_replace(bpy.types.Operator):
                         if not wm.renaming_useRegex:
                             if wm.renaming_matchcase:
                                 new_name = str(entity.name).replace(searchReplaced, replaceReplaced)
-                                entity.name = new_name
-                                rename_data_if_enabled(wm, entity)
-                                msg.add_message(oldName, entity.name)
                             else:
-                                replaceSearch = re.compile(re.escape(searchReplaced), re.IGNORECASE)
-                                new_name = replaceSearch.sub(replaceReplaced, entity.name)
-                                entity.name = new_name
-                                rename_data_if_enabled(wm, entity)
-                                msg.add_message(oldName, entity.name)
+                                pattern = static_pattern or re.compile(re.escape(searchReplaced), re.IGNORECASE)
+                                new_name = pattern.sub(replaceReplaced, entity.name)
                         else:  # Use regex
                             new_name = regex_case_sub(searchReplaced, replaceReplaced, str(entity.name))
-                            entity.name = new_name
-                            rename_data_if_enabled(wm, entity)
-                            msg.add_message(oldName, entity.name)
+                        entity.name = new_name
+                        rename_data_if_enabled(wm, entity)
+                        msg.add_message(oldName, entity.name)
 
         call_renaming_popup(context)
         if switch_edit_mode:

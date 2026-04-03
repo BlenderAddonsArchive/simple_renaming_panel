@@ -31,39 +31,40 @@ class VIEW3D_OT_replace_name(bpy.types.Operator):
         # settings for numerating the new name
         msg = scene.renaming_messages
 
-        vertexGroupNameList = []
-        particleSettingsList = []
-        particleList = []
-        uvmapsList = []
-        dataList = []
-        attributeList = []
-        colorAttributeList = []
-        shapeKeyNamesList = []
-        modifierNamesList = []
-        boneList = []
+        vertexGroupNameList = set()
+        particleSettingsList = set()
+        particleList = set()
+        uvmapsList = set()
+        dataList = set()
+        attributeList = set()
+        colorAttributeList = set()
+        shapeKeyNamesList = set()
+        modifierNamesList = set()
+        boneList = set()
 
         if context.scene.renaming_object_types == 'VERTEXGROUPS':
-            vertexGroupNameList = getAllVertexGroups()
+            vertexGroupNameList = set(getAllVertexGroups())
         if scene.renaming_object_types == 'PARTICLESYSTEM':
-            particleList = getAllParticleNames()
+            particleList = set(getAllParticleNames())
         if scene.renaming_object_types == 'PARTICLESETTINGS':
-            particleSettingsList = getAllParticleSettingsNames()
+            particleSettingsList = set(getAllParticleSettingsNames())
         if context.scene.renaming_object_types == 'UVMAPS':
-            uvmapsList = getAllUvMaps()
+            uvmapsList = set(getAllUvMaps())
         if context.scene.renaming_object_types == 'COLORATTRIBUTES':
-            colorAttributeList = getAllColorAttributes()
+            colorAttributeList = set(getAllColorAttributes())
         if context.scene.renaming_object_types == 'ATTRIBUTES':
-            attributeList = getAllAttributes()
+            attributeList = set(getAllAttributes())
         if scene.renaming_object_types == 'SHAPEKEYS':
-            shapeKeyNamesList = getAllShapeKeys()
+            shapeKeyNamesList = set(getAllShapeKeys())
         if scene.renaming_object_types == 'MODIFIERS':
-            modifierNamesList = getAllModifiers()
+            modifierNamesList = set(getAllModifiers())
         if scene.renaming_object_types == 'BONE':
-            boneList = getAllBones(old_mode)
+            boneList = set(getAllBones(old_mode))
         if scene.renaming_object_types == 'DATA':
-            dataList = getAllDataNames()
+            dataList = set(getAllDataNames())
 
         VariableReplacer.reset()
+        VariableReplacer.prepare(context)
 
         if len(str(replaceName)) > 0:  # New name != empty
             if len(renaming_list) > 0:  # List of objects to rename != empty

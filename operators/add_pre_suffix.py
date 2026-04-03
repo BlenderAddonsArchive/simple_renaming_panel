@@ -26,6 +26,7 @@ class VIEW3D_OT_add_suffix(bpy.types.Operator):
         msg = wm.renaming_messages
 
         VariableReplacer.reset()
+        VariableReplacer.prepare(context)
         if len(renaming_list) > 0:
             for entity in renaming_list:
                 if entity is not None:
@@ -64,6 +65,7 @@ class VIEW3D_OT_add_prefix(bpy.types.Operator):
             return {'CANCELLED'}
 
         VariableReplacer.reset()
+        VariableReplacer.prepare(context)
 
         if len(renaming_list) > 0:
             for entity in renaming_list:

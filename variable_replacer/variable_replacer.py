@@ -7,6 +7,11 @@ import bpy
 
 from .. import __package__ as base_package
 
+# Single compiled pattern covering all supported variables.
+# Multi-char tokens (@u1/@u2/@u3) are listed before the single-char fallback
+# so the alternation matches them first.
+_VARIABLE_RE = re.compile(r'@(?:u[123]|[fdirhlobantpmc])')
+
 
 def generate_random_string(string_length=10):
     """Generate a random string of fixed length """
@@ -23,6 +28,12 @@ class VariableReplacer:
     step = 1
     start_number = 0
 
+    # Per-operation lookup caches built by prepare()
+    _collection_cache = {}       # obj_name -> concatenated collection names
+    _material_to_obj = {}        # material_name -> first owner object name
+    _shape_key_to_obj = {}       # id(Key datablock) -> owner object name
+    _mesh_arm_to_obj = {}        # id(obj.data) -> owner object name
+
     @classmethod
     def reset(cls):
         """reset all values to initial state"""
@@ -38,47 +49,87 @@ class VariableReplacer:
         cls.number = 0
 
     @classmethod
-    def replaceInputString(cls, context, inputText, entity):
+    def prepare(cls, context):
+        """Build per-operation lookup caches before the rename loop.
 
+        Call this once per operator execution after reset().  The caches turn
+        O(collections × objects) and O(objects) per-entity lookups into O(1).
+        """
+        # Collection reverse-lookup: obj_name -> concatenated collection names
+        collection_cache = {}
+        for col in bpy.data.collections:
+            for obj in col.objects:
+                if obj.name in collection_cache:
+                    collection_cache[obj.name] += col.name
+                else:
+                    collection_cache[obj.name] = col.name
+        cls._collection_cache = collection_cache
+
+        # Material -> first owner object name
+        material_to_obj = {}
+        for obj in bpy.data.objects:
+            for slot in obj.material_slots:
+                if slot.material and slot.material.name not in material_to_obj:
+                    material_to_obj[slot.material.name] = obj.name
+        cls._material_to_obj = material_to_obj
+
+        # Shape key (Key datablock) -> owner object name
+        shape_key_to_obj = {}
+        mesh_arm_to_obj = {}
+        for obj in bpy.data.objects:
+            if obj.data is None:
+                continue
+            data_id = id(obj.data)
+            if data_id not in mesh_arm_to_obj:
+                mesh_arm_to_obj[data_id] = obj.name
+            if hasattr(obj.data, 'shape_keys') and obj.data.shape_keys is not None:
+                sk_id = id(obj.data.shape_keys)
+                if sk_id not in shape_key_to_obj:
+                    shape_key_to_obj[sk_id] = obj.name
+        cls._shape_key_to_obj = shape_key_to_obj
+        cls._mesh_arm_to_obj = mesh_arm_to_obj
+
+    @classmethod
+    def replaceInputString(cls, context, inputText, entity):
         """Replace custom variables with the according string"""
         wm = context.scene
         cls.addon_prefs = context.preferences.addons[base_package].preferences
 
-        # System and Global Values #
-        inputText = re.sub(r'@f', cls.getfileName(context), inputText)  # file name
-        inputText = re.sub(r'@d', cls.getDateName(), inputText)  # date
-        inputText = re.sub(r'@i', cls.getTimeName(), inputText)  # time
-        inputText = re.sub(r'@r', cls.getRandomString(), inputText)
+        if '@' not in inputText:
+            return inputText
 
-        # UserStrings #
-        inputText = re.sub(r'@h', cls.get_high_variable(), inputText)  # high
-        inputText = re.sub(r'@l', cls.get_low_variable(), inputText)  # low
-        inputText = re.sub(r'@b', cls.get_cage_variable(), inputText)  # cage
-        inputText = re.sub(r'@u1', cls.getuser1(), inputText)
-        inputText = re.sub(r'@u2', cls.getuser2(), inputText)
-        inputText = re.sub(r'@u3', cls.getuser3(), inputText)
-
-        # GetScene #
-        inputText = re.sub(r'@a', cls.getActive(context), inputText)  # active object
-        inputText = re.sub(r'@n', cls.getNumber(), inputText)
+        # Build replacement table. @n is always evaluated (counter must
+        # advance once per entity regardless of template content).
+        replacements = {
+            '@f': cls.getfileName(context),
+            '@d': cls.getDateName(),
+            '@i': cls.getTimeName(),
+            '@r': cls.getRandomString(),
+            '@h': cls.get_high_variable(),
+            '@l': cls.get_low_variable(),
+            '@b': cls.get_cage_variable(),
+            '@u1': cls.getuser1(),
+            '@u2': cls.getuser2(),
+            '@u3': cls.getuser3(),
+            '@a': cls.getActive(context),
+            '@n': cls.getNumber(),
+        }
 
         if wm.renaming_object_types == 'OBJECT':
-            # Objects
-            inputText = re.sub(r'@o', cls.getObject(entity), inputText)  # object
-            inputText = re.sub(r'@t', cls.getType(entity), inputText)  # type
-            inputText = re.sub(r'@p', cls.getParent(entity), inputText)  # parent
-            inputText = re.sub(r'@m', cls.getData(entity), inputText)  # data
-            inputText = re.sub(r'@c', cls.getCollection(entity), inputText)  # collection
+            replacements['@o'] = cls.getObject(entity)
+            replacements['@t'] = cls.getType(entity)
+            replacements['@p'] = cls.getParent(entity)
+            replacements['@m'] = cls.getData(entity)
+            replacements['@c'] = cls.getCollection(entity)
 
         if wm.renaming_object_types in ('UVMAPS', 'MATERIAL', 'BONE', 'MODIFIERS', 'SHAPEKEYS'):
-            inputText = re.sub(r'@o', cls.getOwnerObjectName(entity), inputText)
+            replacements['@o'] = cls.getOwnerObjectName(entity)
 
-        # IMAGES #
         if wm.renaming_object_types == 'IMAGE':
-            inputText = re.sub(r'@r', 'RESOLUTION', inputText)
-            inputText = re.sub(r'@i', 'FILETYPE', inputText)
+            replacements['@r'] = 'RESOLUTION'
+            replacements['@i'] = 'FILETYPE'
 
-        return inputText
+        return _VARIABLE_RE.sub(lambda m: replacements.get(m.group(), m.group()), inputText)
 
     @staticmethod
     def getRandomString():
@@ -195,18 +246,12 @@ class VariableReplacer:
 
     @classmethod
     def getCollection(cls, entity):
-
-        collectionew_names = ""
-        for collection in bpy.data.collections:
-            collection_objects = collection.objects
-            if entity.name in collection.objects and entity in collection_objects[:]:
-                collectionew_names += collection.name
-
-        return collectionew_names
+        """O(1) lookup using cache built by prepare()."""
+        return cls._collection_cache.get(entity.name, "")
 
     @classmethod
     def getOwnerObjectName(cls, entity):
-        """Find the owner object name for entities that belong to an object (UV maps, bones, modifiers, shape keys, materials)"""
+        """Find the owner object name using caches built by prepare()."""
         id_data = getattr(entity, 'id_data', None)
         if id_data is None:
             return ""
@@ -217,22 +262,11 @@ class VariableReplacer:
 
         # Shape key — id_data is a Key datablock
         if id_data.bl_rna.identifier == 'Key':
-            for obj in bpy.data.objects:
-                if obj.data and hasattr(obj.data, 'shape_keys') and obj.data.shape_keys is id_data:
-                    return obj.name
-            return ""
+            return cls._shape_key_to_obj.get(id(id_data), "")
 
-        # Material — is its own ID datablock, search objects by material slot
+        # Material — search by material name
         if id_data.bl_rna.identifier == 'Material':
-            for obj in bpy.data.objects:
-                for slot in obj.material_slots:
-                    if slot.material is id_data:
-                        return obj.name
-            return ""
+            return cls._material_to_obj.get(id_data.name, "")
 
         # UV layer, bone — id_data is a Mesh or Armature datablock
-        for obj in bpy.data.objects:
-            if obj.data is id_data:
-                return obj.name
-
-        return ""
+        return cls._mesh_arm_to_obj.get(id(id_data), "")

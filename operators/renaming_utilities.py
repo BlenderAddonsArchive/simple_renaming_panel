@@ -38,12 +38,14 @@ def get_renaming_list(context):
 
     if scene.renaming_object_types == 'OBJECT':
         for obj in obj_list:
-            if obj in obj_list and obj.type in scene.renaming_object_types_specified:
+            if obj.type in scene.renaming_object_types_specified:
                 renaming_list.append(obj)
 
     elif scene.renaming_object_types == 'DATA':
+        seen_data = set()
         for obj in obj_list:
-            if obj.data not in renaming_list:
+            if obj.data is not None and id(obj.data) not in seen_data:
+                seen_data.add(id(obj.data))
                 renaming_list.append(obj.data)
 
     elif scene.renaming_object_types == 'MATERIAL':
