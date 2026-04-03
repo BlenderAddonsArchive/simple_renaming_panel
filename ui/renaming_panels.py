@@ -180,6 +180,7 @@ class VIEW3D_PT_tools_renaming_panel(bpy.types.Panel):
         op = row.operator("preferences.rename_addon_search", text="", icon='PREFERENCES')
         op.addon_name = addon_name
         op.prefs_tabs = 'UI'
+        row.operator("renaming.reload_addon", text="", icon='FILE_REFRESH')
 
     def draw(self, context):
         layout = self.layout

@@ -10,6 +10,7 @@ from bpy.props import (
 
 from . import add_pre_suffix
 from . import case_transform
+from . import reload_addon
 from . import name_from_data
 from . import name_replace
 from . import numerate
@@ -78,6 +79,7 @@ classes = (
     case_transform.VIEW3D_OT_case_camel,
     case_transform.VIEW3D_OT_case_snake,
     case_transform.VIEW3D_OT_case_kebab,
+    reload_addon.VIEW3D_OT_reload_addon,
 )
 
 enum_sort_items = [('X', "X Axis", "Sort the object based on the X axis."),
