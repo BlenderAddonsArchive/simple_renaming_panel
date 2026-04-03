@@ -140,7 +140,9 @@ def draw_renaming_panel(layout, context):
     layout.label(text="Other")
 
     row = layout.row(align=True)
-    row.operator("renaming.numerate", icon="LINENUMBERS_ON")    
+    row.operator("renaming.numerate", icon="LINENUMBERS_ON")
+    row = layout.row(align=True)
+    row.menu("RENAMING_MT_case_menu", text="Case Transform", icon='FONT_DATA')    
 
     if str(scene.renaming_object_types) in ('DATA', 'OBJECT', 'ADDOBJECTS'):
         layout.separator()
@@ -284,6 +286,22 @@ class VIEW3D_PT_tools_type_suffix(bpy.types.Panel):
 
         row = col.row()
         row.operator('renaming.add_suffix_prefix_by_type', text="Rename All").option = 'all'
+
+
+class RENAMING_MT_caseMenu(bpy.types.Menu):
+    bl_label = "Case"
+    bl_idname = "RENAMING_MT_case_menu"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator("renaming.case_upper",  text="UPPERCASE")
+        layout.operator("renaming.case_lower",  text="lowercase")
+        layout.separator()
+        layout.operator("renaming.case_pascal", text="PascalCase")
+        layout.operator("renaming.case_camel",  text="camelCase")
+        layout.separator()
+        layout.operator("renaming.case_snake",  text="snake_case")
+        layout.operator("renaming.case_kebab",  text="kebab-case")
 
 
 class VIEW3D_OT_SetVariable(bpy.types.Operator):

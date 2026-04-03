@@ -5,6 +5,97 @@ import bpy
 from .renaming_operators import switch_to_edit_mode
 from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup
 from ..variable_replacer.variable_replacer import VariableReplacer
+from .case_transform import to_upper, to_lower, upper_first, lower_first
+
+
+# ---------------------------------------------------------------------------
+# Regex replace with \u \l \U \L case modifier support
+# Modifiers apply to the immediately following group reference ($N or \N).
+#   \u$1  — uppercase first char of group 1
+#   \l$1  — lowercase first char of group 1
+#   \U$1  — uppercase all of group 1
+#   \L$1  — lowercase all of group 1
+# Both $1 and \1 are accepted as group references.
+# ---------------------------------------------------------------------------
+
+def _read_group_ref(repl, i, match):
+    """Read a $N or \\N group reference at position i.
+    Returns (group_value, chars_consumed)."""
+    if i >= len(repl):
+        return '', 0
+    c = repl[i]
+    if c in ('$', '\\') and i + 1 < len(repl) and repl[i + 1].isdigit():
+        group_num = int(repl[i + 1])
+        try:
+            return match.group(group_num) or '', 2
+        except IndexError:
+            return '', 0
+    return '', 0
+
+
+def _expand_replacement(repl, match):
+    """Expand a replacement string, handling case modifiers and group refs."""
+    result = []
+    i = 0
+    n = len(repl)
+
+    while i < n:
+        c = repl[i]
+
+        if c == '\\' and i + 1 < n:
+            next_c = repl[i + 1]
+
+            if next_c in ('u', 'l', 'U', 'L'):
+                modifier = next_c
+                i += 2
+                group_val, advance = _read_group_ref(repl, i, match)
+                i += advance
+                if modifier == 'u':
+                    group_val = upper_first(group_val)
+                elif modifier == 'l':
+                    group_val = lower_first(group_val)
+                elif modifier == 'U':
+                    group_val = to_upper(group_val)
+                elif modifier == 'L':
+                    group_val = to_lower(group_val)
+                result.append(group_val)
+
+            elif next_c.isdigit():
+                group_num = int(next_c)
+                try:
+                    result.append(match.group(group_num) or '')
+                except IndexError:
+                    result.append('\\' + next_c)
+                i += 2
+
+            else:
+                result.append(c)
+                i += 1
+
+        elif c == '$' and i + 1 < n and repl[i + 1].isdigit():
+            group_num = int(repl[i + 1])
+            try:
+                result.append(match.group(group_num) or '')
+            except IndexError:
+                result.append(c)
+            i += 2
+
+        else:
+            result.append(c)
+            i += 1
+
+    return ''.join(result)
+
+
+def regex_case_sub(pattern, repl, string):
+    """re.sub that additionally supports \\u \\l \\U \\L case modifiers."""
+    if not re.search(r'\\[uUlL]', repl):
+        return re.sub(pattern, repl, string)
+
+    def replacer(match):
+        return _expand_replacement(repl, match)
+
+    return re.sub(pattern, replacer, string)
 
 
 class VIEW3D_OT_search_and_replace(bpy.types.Operator):
@@ -49,8 +140,7 @@ class VIEW3D_OT_search_and_replace(bpy.types.Operator):
                                 entity.name = new_name
                                 msg.add_message(oldName, entity.name)
                         else:  # Use regex
-                            # pattern = re.compile(re.escape(searchName))
-                            new_name = re.sub(searchReplaced, replaceReplaced, str(entity.name))
+                            new_name = regex_case_sub(searchReplaced, replaceReplaced, str(entity.name))
                             entity.name = new_name
                             msg.add_message(oldName, entity.name)
 
