@@ -11,6 +11,7 @@ from bpy.props import (
 from . import add_pre_suffix
 from . import case_transform
 from . import reload_addon
+from .version_check import start_version_check
 from . import name_from_data
 from . import name_replace
 from . import numerate
@@ -181,6 +182,7 @@ def register():
         register_class(cls)
 
     bpy.app.handlers.depsgraph_update_post.append(PostChange)
+    start_version_check()
 
 
 def unregister():

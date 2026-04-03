@@ -15,6 +15,13 @@ types_of_selected = (
 
 
 def draw_renaming_panel(layout, context):
+    from ..operators.version_check import update_available, latest_version_str
+
+    if update_available:
+        row = layout.row(align=True)
+        row.alert = True
+        row.label(text=f"Update available: v{latest_version_str}", icon='ERROR')
+
     scene = context.scene
 
     row = layout.row(align=True)
@@ -142,7 +149,7 @@ def draw_renaming_panel(layout, context):
     row = layout.row(align=True)
     row.operator("renaming.numerate", icon="LINENUMBERS_ON")
     row = layout.row(align=True)
-    row.menu("RENAMING_MT_case_menu", text="Case Transform", icon='FONT_DATA')    
+    row.menu("RENAMING_MT_case_menu", text="Case Transform")    
 
     if str(scene.renaming_object_types) in ('DATA', 'OBJECT', 'ADDOBJECTS'):
         layout.separator()
