@@ -12,6 +12,17 @@ jobs:
         with:
           path: ${{ github.event.repository.name }}
 
+      - name: Check manifest version matches tag
+        run: |
+          tag_version="${{ github.ref_name }}"
+          tag_version="${tag_version#v}"
+          manifest_version=$(grep '^version' ${{ github.event.repository.name }}/blender_manifest.toml | sed 's/version = "\(.*\)"/\1/')
+          if [ "$tag_version" != "$manifest_version" ]; then
+            echo "Version mismatch: tag is '$tag_version' but blender_manifest.toml has '$manifest_version'"
+            exit 1
+          fi
+          echo "Version check passed: $manifest_version"
+
       - name: Zip Repository (excludes hidden dirs, venv, tests)
         run: |
           version_with_underscores=$(echo ${{ github.ref_name }} | tr '.' '_')
