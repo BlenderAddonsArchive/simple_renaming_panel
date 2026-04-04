@@ -1,8 +1,11 @@
+import time
+
 import bpy
 
 from .renaming_operators import switch_to_edit_mode
-from ..operators.renaming_utilities import get_renaming_list, trim_string, call_renaming_popup, call_error_popup, rename_data_if_enabled
-    
+from ..operators.renaming_utilities import get_renaming_list, trim_string, call_renaming_popup, call_error_popup, rename_data_if_enabled, log_timing
+
+
 class VIEW3D_OT_trim_string(bpy.types.Operator):
     bl_idname = "renaming.trim_string"
     bl_label = "Trim String"
@@ -19,6 +22,7 @@ class VIEW3D_OT_trim_string(bpy.types.Operator):
             call_error_popup(context)
             return {'CANCELLED'}
 
+        t_start = time.perf_counter()
         msg = wm.renaming_messages
 
         if len(renaming_list) > 0:
@@ -29,10 +33,11 @@ class VIEW3D_OT_trim_string(bpy.types.Operator):
                     entity.name = new_name
                     rename_data_if_enabled(wm, entity)
                     msg.add_message(old_name, entity.name)
-        
+
+        log_timing(context, "trim_string", t_start, len(renaming_list))
         call_renaming_popup(context)
 
         if switch_edit_mode:
             switch_to_edit_mode(context)
-            
+
         return {'FINISHED'}

@@ -1,7 +1,20 @@
+import time
+
 import bpy
 from bpy.types import PoseBone, EditBone
 
 from .. import __package__ as base_package
+
+
+def log_timing(context, label, t_start, entity_count):
+    """Print elapsed time to the console when debug_timing is enabled."""
+    prefs = context.preferences.addons[base_package].preferences
+    if not prefs.debug_timing:
+        return
+    elapsed_ms = (time.perf_counter() - t_start) * 1000
+    print(f"[RENAMING] {label}: {elapsed_ms:.1f} ms  ({entity_count} entities, "
+          f"{elapsed_ms / entity_count:.3f} ms/entity)" if entity_count else
+          f"[RENAMING] {label}: {elapsed_ms:.1f} ms")
 
 
 def trim_string(string, size):
@@ -185,6 +198,9 @@ def get_renaming_list(context):
                 continue
             for attribute in obj.data.attributes:
                 renaming_list.append(attribute)
+
+    elif scene.renaming_object_types == 'NODE_GROUPS':
+        renaming_list = list(bpy.data.node_groups)
 
     elif scene.renaming_object_types == 'ACTIONS':
         if selection_only:

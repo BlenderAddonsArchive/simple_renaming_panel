@@ -1,9 +1,11 @@
+import time
+
 import bpy
 
 from .renaming_operators import getAllVertexGroups, getAllAttributes, getAllBones, getAllModifiers, getAllUvMaps, \
     getAllColorAttributes, getAllParticleNames, getAllParticleSettingsNames, getAllDataNames, getAllShapeKeys
 from .renaming_operators import switch_to_edit_mode, numerate_entity_name
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled, log_timing
 from ..variable_replacer.variable_replacer import VariableReplacer
 
 
@@ -27,6 +29,7 @@ class VIEW3D_OT_replace_name(bpy.types.Operator):
             return {'CANCELLED'}
 
         old_mode = context.mode
+        t_start = time.perf_counter()
 
         # settings for numerating the new name
         msg = scene.renaming_messages
@@ -159,6 +162,7 @@ class VIEW3D_OT_replace_name(bpy.types.Operator):
         else:  # len(str(replaceName)) <= 0
             msg.add_message(None, None, "Insert a valid string to replace names")
 
+        log_timing(context, "name_replace", t_start, len(renaming_list))
         call_renaming_popup(context)
         if switch_edit_mode:
             switch_to_edit_mode(context)

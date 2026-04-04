@@ -1,9 +1,10 @@
 import re
+import time
 
 import bpy
 
 from .renaming_operators import switch_to_edit_mode
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled, log_timing
 from ..variable_replacer.variable_replacer import VariableReplacer
 from .case_transform import to_upper, to_lower, upper_first, lower_first
 
@@ -116,6 +117,7 @@ class VIEW3D_OT_search_and_replace(bpy.types.Operator):
             call_error_popup(context)
             return {'CANCELLED'}
 
+        t_start = time.perf_counter()
         searchName = wm.renaming_search
 
         msg = wm.renaming_messages  # variable to save messages
@@ -149,6 +151,7 @@ class VIEW3D_OT_search_and_replace(bpy.types.Operator):
                         rename_data_if_enabled(wm, entity)
                         msg.add_message(oldName, entity.name)
 
+        log_timing(context, "search_replace", t_start, len(renaming_list))
         call_renaming_popup(context)
         if switch_edit_mode:
             switch_to_edit_mode(context)
