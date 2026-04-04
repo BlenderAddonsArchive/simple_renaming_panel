@@ -35,6 +35,10 @@ class RENAMING_MT_variableMenu(bpy.types.Menu):
             layout.operator("object.renaming_multivariables", text="TYPE").renaming_variables = "TYPE"
             layout.operator("object.renaming_multivariables", text="COLLECTION").renaming_variables = "COLLECTION"
 
+        if wm.renaming_object_types == 'NODE_GROUPS':
+            layout.separator()
+            layout.operator("object.renaming_multivariables", text="TYPE").renaming_variables = "TYPE"
+
         if wm.renaming_object_types in (
             'UVMAPS', 'MATERIAL', 'BONE', 'MODIFIERS', 'SHAPEKEYS',
             'VERTEXGROUPS', 'PARTICLESYSTEM', 'COLORATTRIBUTES', 'ATTRIBUTES',

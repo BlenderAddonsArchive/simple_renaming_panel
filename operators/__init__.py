@@ -64,6 +64,8 @@ renamingEntitiesItems = [('OBJECT', "Object", "Scene Objects"),
                          None,
                          ('PARTICLESYSTEM', "Particle Systems", "Rename particle systems"),
                          ('PARTICLESETTINGS', "Particle Settings", "Rename particle settings"),
+                         None,
+                         ('NODE_GROUPS', "Node Groups", "Rename node groups"),
                          ]
 
 classes = (

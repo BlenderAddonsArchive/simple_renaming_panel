@@ -52,7 +52,7 @@ def draw_renaming_panel(layout, context):
 
     box = layout
     # Sorting
-    if str(scene.renaming_object_types) not in ['COLLECTION', 'IMAGE']:
+    if str(scene.renaming_object_types) not in ['COLLECTION', 'IMAGE', 'NODE_GROUPS']:
         col = box.column(align=True)
         col.prop(scene, "renaming_sorting")
         if scene.renaming_sorting:

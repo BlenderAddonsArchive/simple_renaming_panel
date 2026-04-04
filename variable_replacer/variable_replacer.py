@@ -158,6 +158,10 @@ class VariableReplacer:
                 if '@c' in vars_present:
                     replacements['@c'] = cls.getCollection(owner_obj)
 
+        if wm.renaming_object_types == 'NODE_GROUPS':
+            if '@t' in vars_present:
+                replacements['@t'] = cls.getType(entity)
+
         if wm.renaming_object_types == 'IMAGE':
             if '@r' in vars_present:
                 replacements['@r'] = 'RESOLUTION'
