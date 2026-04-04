@@ -92,7 +92,8 @@ enumObjectTypesExt = [('EMPTY', "", "Rename empty objects", 'OUTLINER_OB_EMPTY',
                       ('GPENCIL', "", "Rename greace pencil objects", 'OUTLINER_OB_GREASEPENCIL', 512),
                       ('METABALL', "", "Rename metaball objects", 'OUTLINER_OB_META', 2048),
                       ('COLLECTION', "", "Rename collections", 'GROUP', 4096),
-                      ('BONE', "", "", 'BONE_DATA', 8192), ]
+                      ('BONE', "", "", 'BONE_DATA', 8192),
+                      ('POINTCLOUD', "", "Rename point cloud objects", 'OUTLINER_OB_POINTCLOUD', 16384), ]
 
 
 def register():
@@ -113,7 +114,8 @@ def register():
                                                                             'MESH',
                                                                             'ARMATURE', 'LIGHT', 'CAMERA', 'EMPTY',
                                                                             'GPENCIL',
-                                                                            'TEXT', 'BONE', 'COLLECTION'}
+                                                                            'TEXT', 'BONE', 'COLLECTION',
+                                                                            'POINTCLOUD'}
                                                                    )
 
     id_store.renaming_suffix_prefix_material = StringProperty(name='Material', default='')
@@ -135,6 +137,7 @@ def register():
     id_store.renaming_suffix_prefix_bone = StringProperty(name="Bones", default='')
     id_store.renaming_suffix_prefix_speakers = StringProperty(name="Speakers", default='')
     id_store.renaming_suffix_prefix_lightprops = StringProperty(name="LightProps", default='')
+    id_store.renaming_suffix_prefix_pointcloud = StringProperty(name="Point Cloud", default='')
 
     id_store.renaming_inputContext = StringProperty(name="LightProps", default='')
 

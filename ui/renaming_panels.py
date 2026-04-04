@@ -15,6 +15,13 @@ types_of_selected = (
 
 
 def draw_renaming_panel(layout, context):
+    from ..operators.version_check import update_available, latest_version_str
+
+    if update_available:
+        row = layout.row(align=True)
+        row.alert = True
+        row.label(text=f"Update available: v{latest_version_str}", icon='ERROR')
+
     scene = context.scene
 
     row = layout.row(align=True)
@@ -25,6 +32,7 @@ def draw_renaming_panel(layout, context):
     # SELECTED
     if str(scene.renaming_object_types) == 'OBJECT':
         layout.prop(scene, "renaming_object_types_specified", expand=True)
+        layout.prop(scene, "renaming_also_rename_data")
     if str(scene.renaming_object_types) in types_of_selected:
         layout.prop(scene, "renaming_only_selection", text="Only Of Selected Objects")
     elif str(scene.renaming_object_types) in types_selected:
@@ -44,7 +52,7 @@ def draw_renaming_panel(layout, context):
 
     box = layout
     # Sorting
-    if str(scene.renaming_object_types) not in ['COLLECTION', 'IMAGE']:
+    if str(scene.renaming_object_types) not in ['COLLECTION', 'IMAGE', 'NODE_GROUPS']:
         col = box.column(align=True)
         col.prop(scene, "renaming_sorting")
         if scene.renaming_sorting:
@@ -140,7 +148,9 @@ def draw_renaming_panel(layout, context):
     layout.label(text="Other")
 
     row = layout.row(align=True)
-    row.operator("renaming.numerate", icon="LINENUMBERS_ON")    
+    row.operator("renaming.numerate", icon="LINENUMBERS_ON")
+    row = layout.row(align=True)
+    row.menu("RENAMING_MT_case_menu", text="Case Transform")    
 
     if str(scene.renaming_object_types) in ('DATA', 'OBJECT', 'ADDOBJECTS'):
         layout.separator()
@@ -178,6 +188,7 @@ class VIEW3D_PT_tools_renaming_panel(bpy.types.Panel):
         op = row.operator("preferences.rename_addon_search", text="", icon='PREFERENCES')
         op.addon_name = addon_name
         op.prefs_tabs = 'UI'
+        row.operator("renaming.reload_addon", text="", icon='FILE_REFRESH')
 
     def draw(self, context):
         layout = self.layout
@@ -283,7 +294,27 @@ class VIEW3D_PT_tools_type_suffix(bpy.types.Panel):
         row.operator('renaming.add_suffix_prefix_by_type', text="Light Probes").option = 'lightprops'
 
         row = col.row()
+        row.prop(scene, "renaming_suffix_prefix_pointcloud", text="")
+        row.operator('renaming.add_suffix_prefix_by_type', text="Point Clouds").option = 'pointcloud'
+
+        row = col.row()
         row.operator('renaming.add_suffix_prefix_by_type', text="Rename All").option = 'all'
+
+
+class RENAMING_MT_caseMenu(bpy.types.Menu):
+    bl_label = "Case"
+    bl_idname = "RENAMING_MT_case_menu"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator("renaming.case_upper",  text="UPPERCASE")
+        layout.operator("renaming.case_lower",  text="lowercase")
+        layout.separator()
+        layout.operator("renaming.case_pascal", text="PascalCase")
+        layout.operator("renaming.case_camel",  text="camelCase")
+        layout.separator()
+        layout.operator("renaming.case_snake",  text="snake_case")
+        layout.operator("renaming.case_kebab",  text="kebab-case")
 
 
 class VIEW3D_OT_SetVariable(bpy.types.Operator):
@@ -353,6 +384,7 @@ class AddPresetRenamingPresets(AddPresetBase, Operator):
         "scene.renaming_suffix_prefix_bone",
         "scene.renaming_suffix_prefix_speakers",
         "scene.renaming_suffix_prefix_lightprops",
+        "scene.renaming_suffix_prefix_pointcloud",
     ]
 
     # where to store the preset

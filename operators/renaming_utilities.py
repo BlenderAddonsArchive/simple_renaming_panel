@@ -1,7 +1,20 @@
+import time
+
 import bpy
 from bpy.types import PoseBone, EditBone
 
 from .. import __package__ as base_package
+
+
+def log_timing(context, label, t_start, entity_count):
+    """Print elapsed time to the console when debug_timing is enabled."""
+    prefs = context.preferences.addons[base_package].preferences
+    if not prefs.debug_timing:
+        return
+    elapsed_ms = (time.perf_counter() - t_start) * 1000
+    print(f"[RENAMING] {label}: {elapsed_ms:.1f} ms  ({entity_count} entities, "
+          f"{elapsed_ms / entity_count:.3f} ms/entity)" if entity_count else
+          f"[RENAMING] {label}: {elapsed_ms:.1f} ms")
 
 
 def trim_string(string, size):
@@ -38,12 +51,14 @@ def get_renaming_list(context):
 
     if scene.renaming_object_types == 'OBJECT':
         for obj in obj_list:
-            if obj in obj_list and obj.type in scene.renaming_object_types_specified:
+            if obj.type in scene.renaming_object_types_specified:
                 renaming_list.append(obj)
 
     elif scene.renaming_object_types == 'DATA':
+        seen_data = set()
         for obj in obj_list:
-            if obj.data not in renaming_list:
+            if obj.data is not None and id(obj.data) not in seen_data:
+                seen_data.add(id(obj.data))
                 renaming_list.append(obj.data)
 
     elif scene.renaming_object_types == 'MATERIAL':
@@ -185,6 +200,9 @@ def get_renaming_list(context):
             for attribute in obj.data.attributes:
                 renaming_list.append(attribute)
 
+    elif scene.renaming_object_types == 'NODE_GROUPS':
+        renaming_list = list(bpy.data.node_groups)
+
     elif scene.renaming_object_types == 'ACTIONS':
         if selection_only:
             obj_list = context.selected_objects.copy()
@@ -264,6 +282,13 @@ def get_sorted_objects_z(objects):
     return sorted_objects
 
 
+def rename_data_if_enabled(scene, entity):
+    if scene.renaming_also_rename_data and \
+            scene.renaming_object_types in ('OBJECT', 'ADDOBJECTS'):
+        if hasattr(entity, 'data') and entity.data is not None:
+            entity.data.name = entity.name
+
+
 def clear_order_flag(obj):
     try:
         del obj["selection_order"]
@@ -272,7 +297,7 @@ def clear_order_flag(obj):
 
 
 def update_selection_order():
-    if not bpy.context.selected_objects:
+    if not (getattr(bpy.context, 'selected_objects', None) or list(bpy.context.view_layer.objects.selected)):
         for o in bpy.data.objects:
             clear_order_flag(o)
         return

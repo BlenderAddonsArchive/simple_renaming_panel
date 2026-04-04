@@ -7,7 +7,6 @@ from bpy.props import (
 
 from .renaming_keymap import remove_key
 from .. import __package__ as base_package
-from ..ui.renaming_panels import VIEW3D_PT_tools_renaming_panel, VIEW3D_PT_tools_type_suffix
 
 
 def label_multiline(context, text, parent):
@@ -51,6 +50,7 @@ def update_suf_pre_key(self, context):
 
 def update_panel_category(self, context):
     """Update panel tab for collider tools"""
+    from ..ui.renaming_panels import VIEW3D_PT_tools_renaming_panel, VIEW3D_PT_tools_type_suffix
 
     panels = [
         VIEW3D_PT_tools_renaming_panel,
@@ -70,6 +70,7 @@ def update_panel_category(self, context):
 
 
 def toggle_suffix_prefix_panel(self, context):
+    from ..ui.renaming_panels import VIEW3D_PT_tools_type_suffix
     if self.renaming_show_suffix_prefix_panel:
         bpy.utils.register_class(VIEW3D_PT_tools_type_suffix)
     else:
@@ -105,6 +106,12 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
         name="Show Popup",
         description="Enable or Disable Popup",
         default=True,
+    )
+
+    debug_timing: bpy.props.BoolProperty(
+        name="Debug Timing",
+        description="Print operator execution time to the console after each rename operation",
+        default=False,
     )
 
     renamingPanel_useObjectOrder: bpy.props.BoolProperty(
@@ -162,6 +169,25 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
         default='',
     )
 
+    date_format: StringProperty(
+        name="Date Format",
+        description=(
+            "strftime format string for the @d variable. "
+            "Codes: %d=day(03), %m=month(04), %y=year(26), %Y=year(2026), %b=month abbr(Apr). "
+            "Examples: %d%m%Y → 03042026 (DDMMYYYY), %m%d%y → 040326 (MMDDYY), %d%b%Y → 03Apr2026"
+        ),
+        default="%y%m%d",
+    )
+    time_format: StringProperty(
+        name="Time Format",
+        description=(
+            "strftime format string for the @i variable. "
+            "Codes: %H=hour 24h(14), %M=minute(30), %S=second(05), %I=hour 12h(02), %p=AM/PM. "
+            "Example: %H%M → 1430. Avoid colons — invalid in filenames on Windows"
+        ),
+        default="%H%M",
+    )
+
     renaming_show_suffix_prefix_panel: bpy.props.BoolProperty(
         name="Prefix/Suffix by Type Panel",
         description="Enable or disable the Prefix/Suffix by Type Panel",
@@ -185,7 +211,7 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
         "renamingPanel_showPopup",
         "renaming_show_suffix_prefix_panel",
         "renamingPanel_useObjectOrder",
-
+        "debug_timing",
     ]
     props_naming = [
         "renaming_separator",
@@ -203,6 +229,11 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
         "renaming_user1",
         "renaming_user2",
         "renaming_user3"
+    ]
+
+    props_date_time = [
+        "date_format",
+        "time_format",
     ]
 
     renaming_panel_type: bpy.props.StringProperty(
@@ -322,6 +353,13 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
             row = box.row()
             row.label(text='Numerate')
             for propName in self.props_numerate:
+                row = box.row()
+                row.prop(self, propName)
+
+            box = layout.box()
+            row = box.row()
+            row.label(text='Date & Time Variables')
+            for propName in self.props_date_time:
                 row = box.row()
                 row.prop(self, propName)
 

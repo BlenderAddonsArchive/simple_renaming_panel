@@ -1,9 +1,11 @@
+import time
+
 import bpy
 
 from .renaming_operators import getAllVertexGroups, getAllAttributes, getAllBones, getAllModifiers, getAllUvMaps, \
     getAllColorAttributes, getAllParticleNames, getAllParticleSettingsNames, getAllDataNames, getAllShapeKeys
 from .renaming_operators import switch_to_edit_mode, numerate_entity_name
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled, log_timing
 from ..variable_replacer.variable_replacer import VariableReplacer
 
 
@@ -27,43 +29,45 @@ class VIEW3D_OT_replace_name(bpy.types.Operator):
             return {'CANCELLED'}
 
         old_mode = context.mode
+        t_start = time.perf_counter()
 
         # settings for numerating the new name
         msg = scene.renaming_messages
 
-        vertexGroupNameList = []
-        particleSettingsList = []
-        particleList = []
-        uvmapsList = []
-        dataList = []
-        attributeList = []
-        colorAttributeList = []
-        shapeKeyNamesList = []
-        modifierNamesList = []
-        boneList = []
+        vertexGroupNameList = set()
+        particleSettingsList = set()
+        particleList = set()
+        uvmapsList = set()
+        dataList = set()
+        attributeList = set()
+        colorAttributeList = set()
+        shapeKeyNamesList = set()
+        modifierNamesList = set()
+        boneList = set()
 
         if context.scene.renaming_object_types == 'VERTEXGROUPS':
-            vertexGroupNameList = getAllVertexGroups()
+            vertexGroupNameList = set(getAllVertexGroups())
         if scene.renaming_object_types == 'PARTICLESYSTEM':
-            particleList = getAllParticleNames()
+            particleList = set(getAllParticleNames())
         if scene.renaming_object_types == 'PARTICLESETTINGS':
-            particleSettingsList = getAllParticleSettingsNames()
+            particleSettingsList = set(getAllParticleSettingsNames())
         if context.scene.renaming_object_types == 'UVMAPS':
-            uvmapsList = getAllUvMaps()
+            uvmapsList = set(getAllUvMaps())
         if context.scene.renaming_object_types == 'COLORATTRIBUTES':
-            colorAttributeList = getAllColorAttributes()
+            colorAttributeList = set(getAllColorAttributes())
         if context.scene.renaming_object_types == 'ATTRIBUTES':
-            attributeList = getAllAttributes()
+            attributeList = set(getAllAttributes())
         if scene.renaming_object_types == 'SHAPEKEYS':
-            shapeKeyNamesList = getAllShapeKeys()
+            shapeKeyNamesList = set(getAllShapeKeys())
         if scene.renaming_object_types == 'MODIFIERS':
-            modifierNamesList = getAllModifiers()
+            modifierNamesList = set(getAllModifiers())
         if scene.renaming_object_types == 'BONE':
-            boneList = getAllBones(old_mode)
+            boneList = set(getAllBones(old_mode))
         if scene.renaming_object_types == 'DATA':
-            dataList = getAllDataNames()
+            dataList = set(getAllDataNames())
 
         VariableReplacer.reset()
+        VariableReplacer.prepare(context)
 
         if len(str(replaceName)) > 0:  # New name != empty
             if len(renaming_list) > 0:  # List of objects to rename != empty
@@ -76,8 +80,12 @@ class VIEW3D_OT_replace_name(bpy.types.Operator):
                         new_name = ''
 
                         if not scene.renaming_use_enumerate:
-                            entity.name = replaceName
-                            msg.add_message(oldName, entity.name)
+                            try:
+                                entity.name = replaceName
+                                rename_data_if_enabled(scene, entity)
+                                msg.add_message(oldName, entity.name)
+                            except AttributeError:
+                                print("Attribute {} is read only".format(replaceName))
 
                         else:  # if scene.renaming_use_enumerate == True
 
@@ -145,6 +153,7 @@ class VIEW3D_OT_replace_name(bpy.types.Operator):
 
                             try:
                                 entity.name = new_name
+                                rename_data_if_enabled(scene, entity)
                                 msg.add_message(oldName, entity.name)
                             except AttributeError:
                                 print("Attribute {} is read only".format(new_name))
@@ -153,6 +162,7 @@ class VIEW3D_OT_replace_name(bpy.types.Operator):
         else:  # len(str(replaceName)) <= 0
             msg.add_message(None, None, "Insert a valid string to replace names")
 
+        log_timing(context, "name_replace", t_start, len(renaming_list))
         call_renaming_popup(context)
         if switch_edit_mode:
             switch_to_edit_mode(context)

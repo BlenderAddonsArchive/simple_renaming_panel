@@ -9,6 +9,9 @@ from bpy.props import (
 )
 
 from . import add_pre_suffix
+from . import case_transform
+from . import reload_addon
+from .version_check import start_version_check
 from . import name_from_data
 from . import name_replace
 from . import numerate
@@ -30,7 +33,8 @@ enumObjectTypes = [('EMPTY', "", "Rename empty objects", 'OUTLINER_OB_EMPTY', 1)
                    ('META', "", "Rename metaball objects", 'OUTLINER_OB_META', 1024),
                    ('SPEAKER', "", "Rename empty speakers", 'OUTLINER_OB_SPEAKER', 2048),
                    ('LIGHT_PROBE', "", "Rename mesh lightpropes", 'OUTLINER_OB_LIGHTPROBE', 4096),
-                   ('VOLUME', "", "Rename mesh volumes", 'OUTLINER_OB_VOLUME', 8192)]
+                   ('VOLUME', "", "Rename mesh volumes", 'OUTLINER_OB_VOLUME', 8192),
+                   ('POINTCLOUD', "", "Rename point cloud objects", 'OUTLINER_OB_POINTCLOUD', 16384)]
 
 enumObjectTypesAdd = [('SPEAKER', "", "Rename empty speakers", 'OUTLINER_OB_SPEAKER', 1),
                       ('LIGHT_PROBE', "", "Rename mesh lightpropes", 'OUTLINER_OB_LIGHTPROBE', 2)]
@@ -60,6 +64,8 @@ renamingEntitiesItems = [('OBJECT', "Object", "Scene Objects"),
                          None,
                          ('PARTICLESYSTEM', "Particle Systems", "Rename particle systems"),
                          ('PARTICLESETTINGS', "Particle Settings", "Rename particle settings"),
+                         None,
+                         ('NODE_GROUPS', "Node Groups", "Rename node groups"),
                          ]
 
 classes = (
@@ -71,6 +77,13 @@ classes = (
     add_pre_suffix.VIEW3D_OT_add_prefix,
     numerate.VIEW3D_OT_renaming_numerate,
     name_from_data.VIEW3D_OT_use_objectname_for_data,
+    case_transform.VIEW3D_OT_case_upper,
+    case_transform.VIEW3D_OT_case_lower,
+    case_transform.VIEW3D_OT_case_pascal,
+    case_transform.VIEW3D_OT_case_camel,
+    case_transform.VIEW3D_OT_case_snake,
+    case_transform.VIEW3D_OT_case_kebab,
+    reload_addon.VIEW3D_OT_reload_addon,
 )
 
 enum_sort_items = [('X', "X Axis", "Sort the object based on the X axis."),
@@ -120,7 +133,8 @@ def register():
                                                             options={'ENUM_FLAG'},
                                                             default={'CURVE', 'LATTICE', 'SURFACE', 'MESH',
                                                                      'ARMATURE', 'LIGHT', 'CAMERA', 'EMPTY', 'GPENCIL',
-                                                                     'FONT', 'SPEAKER', 'LIGHT_PROBE', 'VOLUME'}
+                                                                     'FONT', 'SPEAKER', 'LIGHT_PROBE', 'VOLUME',
+                                                                     'POINTCLOUD'}
                                                             )
 
     id_store.renaming_sort_enum = EnumProperty(
@@ -166,12 +180,19 @@ def register():
     id_store.renaming_digits_numerate = IntProperty(name="Number Length", default=3)
     id_store.renaming_trim_indices = IntVectorProperty(name="Trim Size", default=(0, 0), min=0, soft_min=0, size=2)
 
+    id_store.renaming_also_rename_data = BoolProperty(
+        name="Also Rename Data",
+        description="Also rename the linked data block (mesh, curve, etc.) to match the object name",
+        default=False,
+    )
+
     from bpy.utils import register_class
 
     for cls in classes:
         register_class(cls)
 
     bpy.app.handlers.depsgraph_update_post.append(PostChange)
+    start_version_check()
 
 
 def unregister():
@@ -192,5 +213,6 @@ def unregister():
     del IDStore.renaming_base_numerate
     del IDStore.renaming_digits_numerate
     del IDStore.renaming_trim_indices
+    del IDStore.renaming_also_rename_data
 
     bpy.app.handlers.depsgraph_update_post.remove(PostChange)
