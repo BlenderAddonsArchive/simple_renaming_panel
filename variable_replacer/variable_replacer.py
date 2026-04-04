@@ -98,36 +98,71 @@ class VariableReplacer:
         if '@' not in inputText:
             return inputText
 
-        # Build replacement table. @n is always evaluated (counter must
-        # advance once per entity regardless of template content).
-        replacements = {
-            '@f': cls.getfileName(context),
-            '@d': cls.getDateName(),
-            '@i': cls.getTimeName(),
-            '@r': cls.getRandomString(),
-            '@h': cls.get_high_variable(),
-            '@l': cls.get_low_variable(),
-            '@b': cls.get_cage_variable(),
-            '@u1': cls.getuser1(),
-            '@u2': cls.getuser2(),
-            '@u3': cls.getuser3(),
-            '@a': cls.getActive(context),
-            '@n': cls.getNumber(),
-        }
+        # Find only the variables present in this template so we skip calling
+        # getters that are not needed (lazy evaluation).
+        vars_present = set(_VARIABLE_RE.findall(inputText))
+
+        replacements = {}
+
+        if '@n' in vars_present:
+            replacements['@n'] = cls.getNumber()
+        if '@f' in vars_present:
+            replacements['@f'] = cls.getfileName(context)
+        if '@d' in vars_present:
+            replacements['@d'] = cls.getDateName()
+        if '@i' in vars_present:
+            replacements['@i'] = cls.getTimeName()
+        if '@r' in vars_present:
+            replacements['@r'] = cls.getRandomString()
+        if '@h' in vars_present:
+            replacements['@h'] = cls.get_high_variable()
+        if '@l' in vars_present:
+            replacements['@l'] = cls.get_low_variable()
+        if '@b' in vars_present:
+            replacements['@b'] = cls.get_cage_variable()
+        if '@u1' in vars_present:
+            replacements['@u1'] = cls.getuser1()
+        if '@u2' in vars_present:
+            replacements['@u2'] = cls.getuser2()
+        if '@u3' in vars_present:
+            replacements['@u3'] = cls.getuser3()
+        if '@a' in vars_present:
+            replacements['@a'] = cls.getActive(context)
 
         if wm.renaming_object_types == 'OBJECT':
-            replacements['@o'] = cls.getObject(entity)
-            replacements['@t'] = cls.getType(entity)
-            replacements['@p'] = cls.getParent(entity)
-            replacements['@m'] = cls.getData(entity)
-            replacements['@c'] = cls.getCollection(entity)
+            if '@o' in vars_present:
+                replacements['@o'] = cls.getObject(entity)
+            if '@t' in vars_present:
+                replacements['@t'] = cls.getType(entity)
+            if '@p' in vars_present:
+                replacements['@p'] = cls.getParent(entity)
+            if '@m' in vars_present:
+                replacements['@m'] = cls.getData(entity)
+            if '@c' in vars_present:
+                replacements['@c'] = cls.getCollection(entity)
 
-        if wm.renaming_object_types in ('UVMAPS', 'MATERIAL', 'BONE', 'MODIFIERS', 'SHAPEKEYS'):
-            replacements['@o'] = cls.getOwnerObjectName(entity)
+        if wm.renaming_object_types in (
+            'UVMAPS', 'MATERIAL', 'BONE', 'MODIFIERS', 'SHAPEKEYS',
+            'VERTEXGROUPS', 'PARTICLESYSTEM', 'COLORATTRIBUTES', 'ATTRIBUTES',
+        ):
+            owner_obj = bpy.data.objects.get(cls.getOwnerObjectName(entity))
+            if owner_obj is not None:
+                if '@o' in vars_present:
+                    replacements['@o'] = owner_obj.name
+                if '@t' in vars_present:
+                    replacements['@t'] = cls.getType(owner_obj)
+                if '@p' in vars_present:
+                    replacements['@p'] = cls.getParent(owner_obj)
+                if '@m' in vars_present:
+                    replacements['@m'] = cls.getData(owner_obj)
+                if '@c' in vars_present:
+                    replacements['@c'] = cls.getCollection(owner_obj)
 
         if wm.renaming_object_types == 'IMAGE':
-            replacements['@r'] = 'RESOLUTION'
-            replacements['@i'] = 'FILETYPE'
+            if '@r' in vars_present:
+                replacements['@r'] = 'RESOLUTION'
+            if '@i' in vars_present:
+                replacements['@i'] = 'FILETYPE'
 
         return _VARIABLE_RE.sub(lambda m: replacements.get(m.group(), m.group()), inputText)
 
