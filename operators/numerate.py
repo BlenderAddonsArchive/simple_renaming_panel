@@ -4,7 +4,7 @@ import bpy
 
 from .renaming_operators import switch_to_edit_mode
 from .. import __package__ as base_package
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled, log_timing
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled, update_bone_drivers, log_timing
 
 
 class VIEW3D_OT_renaming_numerate(bpy.types.Operator):
@@ -34,16 +34,27 @@ class VIEW3D_OT_renaming_numerate(bpy.types.Operator):
             call_error_popup(context)
             return {'CANCELLED'}
 
+        per_object_types = {'SHAPEKEYS', 'VERTEXGROUPS', 'UVMAPS', 'COLORATTRIBUTES', 'ATTRIBUTES', 'BONE'}
+        obj_type = wm.renaming_object_types
+
         t_start = time.perf_counter()
         if len(renaming_list) > 0:
             i = 0
+            current_owner = None
             for entity in renaming_list:
                 if entity is not None:
+                    if obj_type in per_object_types:
+                        owner = entity.id_data
+                        if owner != current_owner:
+                            current_owner = owner
+                            i = 0
                     oldName = entity.name
                     new_name = entity.name + separator + (
                         '{num:{fill}{width}}'.format(num=(i * step) + start_number, fill='0', width=digits))
                     entity.name = new_name
                     rename_data_if_enabled(wm, entity)
+                    if obj_type == 'BONE':
+                        update_bone_drivers(oldName, entity.name)
                     msg.add_message(oldName, entity.name)
                     i = i + 1
 
