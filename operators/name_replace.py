@@ -77,9 +77,12 @@ class VIEW3D_OT_replace_name(bpy.types.Operator):
                         new_name = ''
 
                         if not scene.renaming_use_enumerate:
-                            entity.name = replaceName
-                            rename_data_if_enabled(scene, entity)
-                            msg.add_message(oldName, entity.name)
+                            try:
+                                entity.name = replaceName
+                                rename_data_if_enabled(scene, entity)
+                                msg.add_message(oldName, entity.name)
+                            except AttributeError:
+                                print("Attribute {} is read only".format(replaceName))
 
                         else:  # if scene.renaming_use_enumerate == True
 

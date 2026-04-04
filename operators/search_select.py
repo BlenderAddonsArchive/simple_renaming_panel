@@ -29,6 +29,7 @@ class VIEW3D_OT_search_and_select(VIEW3D_OT_naming):
 
     def execute(self, context):
         super().execute(context)
+        VariableReplacer.prepare(context)
         wm = context.scene
 
         # get list of objects to be selected
