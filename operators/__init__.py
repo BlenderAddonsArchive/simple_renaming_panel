@@ -64,6 +64,8 @@ renamingEntitiesItems = [('OBJECT', "Object", "Scene Objects"),
                          None,
                          ('PARTICLESYSTEM', "Particle Systems", "Rename particle systems"),
                          ('PARTICLESETTINGS', "Particle Settings", "Rename particle settings"),
+                         None,
+                         ('NODE_GROUPS', "Node Groups", "Rename node groups"),
                          ]
 
 classes = (
@@ -178,6 +180,18 @@ def register():
     id_store.renaming_digits_numerate = IntProperty(name="Number Length", default=3)
     id_store.renaming_trim_indices = IntVectorProperty(name="Trim Size", default=(0, 0), min=0, soft_min=0, size=2)
 
+    id_store.renaming_active_only = BoolProperty(
+        name="Active Only",
+        description="Only rename the active layer on each object",
+        default=False,
+    )
+    id_store.renaming_filter_by_index = BoolProperty(
+        name="By Index",
+        description="Only rename the layer at the specified index on each object",
+        default=False,
+    )
+    id_store.renaming_index_target = IntProperty(name="Index", default=0, min=0)
+
     id_store.renaming_also_rename_data = BoolProperty(
         name="Also Rename Data",
         description="Also rename the linked data block (mesh, curve, etc.) to match the object name",
@@ -212,5 +226,8 @@ def unregister():
     del IDStore.renaming_digits_numerate
     del IDStore.renaming_trim_indices
     del IDStore.renaming_also_rename_data
+    del IDStore.renaming_active_only
+    del IDStore.renaming_filter_by_index
+    del IDStore.renaming_index_target
 
     bpy.app.handlers.depsgraph_update_post.remove(PostChange)

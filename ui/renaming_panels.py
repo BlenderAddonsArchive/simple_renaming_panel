@@ -35,6 +35,15 @@ def draw_renaming_panel(layout, context):
         layout.prop(scene, "renaming_also_rename_data")
     if str(scene.renaming_object_types) in types_of_selected:
         layout.prop(scene, "renaming_only_selection", text="Only Of Selected Objects")
+    if str(scene.renaming_object_types) in ('UVMAPS', 'COLORATTRIBUTES', 'ATTRIBUTES', 'VERTEXGROUPS', 'SHAPEKEYS'):
+        col = layout.column(align=True)
+        if str(scene.renaming_object_types) in ('UVMAPS', 'COLORATTRIBUTES'):
+            col.prop(scene, "renaming_active_only")
+        row = col.row(align=True)
+        row.prop(scene, "renaming_filter_by_index")
+        sub = row.row(align=True)
+        sub.enabled = scene.renaming_filter_by_index
+        sub.prop(scene, "renaming_index_target", text="")
     elif str(scene.renaming_object_types) in types_selected:
         layout.prop(scene, "renaming_only_selection", text="Only Selected")
     elif str(scene.renaming_object_types) == 'COLLECTION':
@@ -52,7 +61,7 @@ def draw_renaming_panel(layout, context):
 
     box = layout
     # Sorting
-    if str(scene.renaming_object_types) not in ['COLLECTION', 'IMAGE']:
+    if str(scene.renaming_object_types) not in ['COLLECTION', 'IMAGE', 'NODE_GROUPS']:
         col = box.column(align=True)
         col.prop(scene, "renaming_sorting")
         if scene.renaming_sorting:

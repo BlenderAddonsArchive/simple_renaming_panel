@@ -1,7 +1,9 @@
+import time
+
 import bpy
 
 from .renaming_operators import switch_to_edit_mode
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled, update_bone_drivers, log_timing
 from ..variable_replacer.variable_replacer import VariableReplacer
 
 
@@ -23,9 +25,11 @@ class VIEW3D_OT_add_suffix(bpy.types.Operator):
             call_error_popup(context)
             return {'CANCELLED'}
 
+        t_start = time.perf_counter()
         msg = wm.renaming_messages
 
         VariableReplacer.reset()
+        VariableReplacer.prepare(context)
         if len(renaming_list) > 0:
             for entity in renaming_list:
                 if entity is not None:
@@ -35,11 +39,14 @@ class VIEW3D_OT_add_suffix(bpy.types.Operator):
                         new_name = entity.name + suffix
                         entity.name = new_name
                         rename_data_if_enabled(wm, entity)
+                        if wm.renaming_object_types == 'BONE':
+                            update_bone_drivers(oldName, entity.name)
                         msg.add_message(oldName, entity.name)
         else:
             msg.add_message(None, None, "Insert Valid String")
         if switch_edit_mode:
             switch_to_edit_mode(context)
+        log_timing(context, "add_suffix", t_start, len(renaming_list))
         call_renaming_popup(context)
         return {'FINISHED'}
 
@@ -63,7 +70,9 @@ class VIEW3D_OT_add_prefix(bpy.types.Operator):
             call_error_popup(context)
             return {'CANCELLED'}
 
+        t_start = time.perf_counter()
         VariableReplacer.reset()
+        VariableReplacer.prepare(context)
 
         if len(renaming_list) > 0:
             for entity in renaming_list:
@@ -74,8 +83,11 @@ class VIEW3D_OT_add_prefix(bpy.types.Operator):
                         new_name = pre + entity.name
                         entity.name = new_name
                         rename_data_if_enabled(wm, entity)
+                        if wm.renaming_object_types == 'BONE':
+                            update_bone_drivers(oldName, entity.name)
                         msg.add_message(oldName, entity.name)
 
+        log_timing(context, "add_prefix", t_start, len(renaming_list))
         call_renaming_popup(context)
         if switch_edit_mode:
             switch_to_edit_mode(context)

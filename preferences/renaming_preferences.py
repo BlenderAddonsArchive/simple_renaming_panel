@@ -108,6 +108,12 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
         default=True,
     )
 
+    debug_timing: bpy.props.BoolProperty(
+        name="Debug Timing",
+        description="Print operator execution time to the console after each rename operation",
+        default=False,
+    )
+
     renamingPanel_useObjectOrder: bpy.props.BoolProperty(
         name="Use Selection Order",
         description="Use the order of selection when renaming objects",
@@ -165,12 +171,20 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
 
     date_format: StringProperty(
         name="Date Format",
-        description="strftime format string for the @d variable (e.g. %d%b%Y → 03Apr2026)",
-        default="%d%b%Y",
+        description=(
+            "strftime format string for the @d variable. "
+            "Codes: %d=day(03), %m=month(04), %y=year(26), %Y=year(2026), %b=month abbr(Apr). "
+            "Examples: %d%m%Y → 03042026 (DDMMYYYY), %m%d%y → 040326 (MMDDYY), %d%b%Y → 03Apr2026"
+        ),
+        default="%y%m%d",
     )
     time_format: StringProperty(
         name="Time Format",
-        description="strftime format string for the @i variable (e.g. %H%M → 1430). Avoid colons — they are invalid in filenames on Windows",
+        description=(
+            "strftime format string for the @i variable. "
+            "Codes: %H=hour 24h(14), %M=minute(30), %S=second(05), %I=hour 12h(02), %p=AM/PM. "
+            "Example: %H%M → 1430. Avoid colons — invalid in filenames on Windows"
+        ),
         default="%H%M",
     )
 
@@ -197,7 +211,7 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
         "renamingPanel_showPopup",
         "renaming_show_suffix_prefix_panel",
         "renamingPanel_useObjectOrder",
-
+        "debug_timing",
     ]
     props_naming = [
         "renaming_separator",

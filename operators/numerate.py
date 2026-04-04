@@ -1,8 +1,10 @@
+import time
+
 import bpy
 
 from .renaming_operators import switch_to_edit_mode
 from .. import __package__ as base_package
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled, update_bone_drivers, log_timing
 
 
 class VIEW3D_OT_renaming_numerate(bpy.types.Operator):
@@ -32,6 +34,7 @@ class VIEW3D_OT_renaming_numerate(bpy.types.Operator):
             call_error_popup(context)
             return {'CANCELLED'}
 
+        t_start = time.perf_counter()
         if len(renaming_list) > 0:
             i = 0
             for entity in renaming_list:
@@ -41,9 +44,12 @@ class VIEW3D_OT_renaming_numerate(bpy.types.Operator):
                         '{num:{fill}{width}}'.format(num=(i * step) + start_number, fill='0', width=digits))
                     entity.name = new_name
                     rename_data_if_enabled(wm, entity)
+                    if wm.renaming_object_types == 'BONE':
+                        update_bone_drivers(oldName, entity.name)
                     msg.add_message(oldName, entity.name)
                     i = i + 1
 
+        log_timing(context, "numerate", t_start, len(renaming_list))
         call_renaming_popup(context)
         if switch_edit_mode:
             switch_to_edit_mode(context)

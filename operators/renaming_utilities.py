@@ -1,7 +1,20 @@
+import time
+
 import bpy
 from bpy.types import PoseBone, EditBone
 
 from .. import __package__ as base_package
+
+
+def log_timing(context, label, t_start, entity_count):
+    """Print elapsed time to the console when debug_timing is enabled."""
+    prefs = context.preferences.addons[base_package].preferences
+    if not prefs.debug_timing:
+        return
+    elapsed_ms = (time.perf_counter() - t_start) * 1000
+    print(f"[RENAMING] {label}: {elapsed_ms:.1f} ms  ({entity_count} entities, "
+          f"{elapsed_ms / entity_count:.3f} ms/entity)" if entity_count else
+          f"[RENAMING] {label}: {elapsed_ms:.1f} ms")
 
 
 def trim_string(string, size):
@@ -38,12 +51,14 @@ def get_renaming_list(context):
 
     if scene.renaming_object_types == 'OBJECT':
         for obj in obj_list:
-            if obj in obj_list and obj.type in scene.renaming_object_types_specified:
+            if obj.type in scene.renaming_object_types_specified:
                 renaming_list.append(obj)
 
     elif scene.renaming_object_types == 'DATA':
+        seen_data = set()
         for obj in obj_list:
-            if obj.data not in renaming_list:
+            if obj.data is not None and id(obj.data) not in seen_data:
+                seen_data.add(id(obj.data))
                 renaming_list.append(obj.data)
 
     elif scene.renaming_object_types == 'MATERIAL':
@@ -117,14 +132,25 @@ def get_renaming_list(context):
             renaming_list = list(bpy.data.collections)
 
     elif scene.renaming_object_types == 'SHAPEKEYS':
+        filter_index = scene.renaming_filter_by_index
+        idx = scene.renaming_index_target
         if selection_only:
             for obj in context.selected_objects:
-                for shape in obj.data.shape_keys.key_blocks:
-                    renaming_list.append(shape)
+                if obj.data and obj.data.shape_keys:
+                    items = list(obj.data.shape_keys.key_blocks)
+                    if filter_index:
+                        if idx < len(items):
+                            renaming_list.append(items[idx])
+                    else:
+                        renaming_list.extend(items)
         else:  # selection_only == False:
             for key_grp in bpy.data.shape_keys:
-                for key in key_grp.key_blocks:
-                    renaming_list.append(key)
+                items = list(key_grp.key_blocks)
+                if filter_index:
+                    if idx < len(items):
+                        renaming_list.append(items[idx])
+                else:
+                    renaming_list.extend(items)
 
     elif scene.renaming_object_types == 'MODIFIERS':
         if selection_only:
@@ -137,14 +163,16 @@ def get_renaming_list(context):
                     renaming_list.append(mod)
 
     elif context.scene.renaming_object_types == 'VERTEXGROUPS':
-        if selection_only:
-            for obj in context.selected_objects:
-                for vtx in obj.vertex_groups:
-                    renaming_list.append(vtx)
-        else:
-            for obj in bpy.data.objects:
-                for vtx in obj.vertex_groups:
-                    renaming_list.append(vtx)
+        filter_index = scene.renaming_filter_by_index
+        idx = scene.renaming_index_target
+        obj_iter = context.selected_objects if selection_only else bpy.data.objects
+        for obj in obj_iter:
+            items = list(obj.vertex_groups)
+            if filter_index:
+                if idx < len(items):
+                    renaming_list.append(items[idx])
+            else:
+                renaming_list.extend(items)
 
     elif context.scene.renaming_object_types == 'PARTICLESYSTEM':
         if selection_only:
@@ -162,27 +190,64 @@ def get_renaming_list(context):
 
     elif context.scene.renaming_object_types == 'UVMAPS':
 
+        filter_index = scene.renaming_filter_by_index
+        active_only = scene.renaming_active_only
+        idx = scene.renaming_index_target
         for obj in obj_list:
             if obj.type != 'MESH':
                 continue
-            for uv in obj.data.uv_layers:
-                renaming_list.append(uv)
+            if filter_index:
+                items = list(obj.data.uv_layers)
+                if idx < len(items):
+                    item = items[idx]
+                    if not active_only or obj.data.uv_layers.active == item:
+                        renaming_list.append(item)
+            elif active_only:
+                active = obj.data.uv_layers.active
+                if active is not None:
+                    renaming_list.append(active)
+            else:
+                for uv in obj.data.uv_layers:
+                    renaming_list.append(uv)
 
     elif context.scene.renaming_object_types == 'COLORATTRIBUTES':
 
+        filter_index = scene.renaming_filter_by_index
+        active_only = scene.renaming_active_only
+        idx = scene.renaming_index_target
         for obj in obj_list:
             if obj.type != 'MESH':
                 continue
-            for color_attribute in obj.data.color_attributes:
-                renaming_list.append(color_attribute)
+            if filter_index:
+                items = list(obj.data.color_attributes)
+                if idx < len(items):
+                    item = items[idx]
+                    if not active_only or obj.data.color_attributes.active_color == item:
+                        renaming_list.append(item)
+            elif active_only:
+                active = obj.data.color_attributes.active_color
+                if active is not None:
+                    renaming_list.append(active)
+            else:
+                for color_attribute in obj.data.color_attributes:
+                    renaming_list.append(color_attribute)
 
     elif context.scene.renaming_object_types == 'ATTRIBUTES':
 
+        filter_index = scene.renaming_filter_by_index
+        idx = scene.renaming_index_target
         for obj in obj_list:
             if obj.type != 'MESH':
                 continue
-            for attribute in obj.data.attributes:
-                renaming_list.append(attribute)
+            items = list(obj.data.attributes)
+            if filter_index:
+                if idx < len(items):
+                    renaming_list.append(items[idx])
+            else:
+                renaming_list.extend(items)
+
+    elif scene.renaming_object_types == 'NODE_GROUPS':
+        renaming_list = list(bpy.data.node_groups)
 
     elif scene.renaming_object_types == 'ACTIONS':
         if selection_only:
@@ -268,6 +333,39 @@ def rename_data_if_enabled(scene, entity):
             scene.renaming_object_types in ('OBJECT', 'ADDOBJECTS'):
         if hasattr(entity, 'data') and entity.data is not None:
             entity.data.name = entity.name
+
+
+def update_bone_drivers(old_name, new_name):
+    """Update all driver paths that reference a renamed bone."""
+    if old_name == new_name:
+        return
+
+    # Blender may use either double or single quotes in data_path strings.
+    old_tokens = (f'pose.bones["{old_name}"]', f"pose.bones['{old_name}']")
+    new_token = f'pose.bones["{new_name}"]'
+
+    for datablock in list(bpy.data.objects) + list(bpy.data.scenes):
+        anim_data = getattr(datablock, 'animation_data', None)
+        if anim_data is None:
+            continue
+        for fcurve in anim_data.drivers:
+            # Location 1: FCurve data_path
+            for old_token in old_tokens:
+                if old_token in fcurve.data_path:
+                    fcurve.data_path = fcurve.data_path.replace(old_token, new_token)
+
+            driver = fcurve.driver
+            if driver is None:
+                continue
+            for var in driver.variables:
+                for target in var.targets:
+                    # Location 2: bone_target field
+                    if target.bone_target == old_name:
+                        target.bone_target = new_name
+                    # Location 3: data_path inside variable target
+                    for old_token in old_tokens:
+                        if old_token in target.data_path:
+                            target.data_path = target.data_path.replace(old_token, new_token)
 
 
 def clear_order_flag(obj):

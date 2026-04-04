@@ -29,120 +29,64 @@ def numerate_entity_name(context, basename, type_list, active_entity_name, retur
             '{num:{fill}{width}}'.format(num=(i * step) + start_number, fill='0', width=digits))
         i += 1
 
-    if return_type_list:  # Manually add new name to custom generated list like all bones and all shape keys
-        type_list.append(new_name)
+    if return_type_list:  # Manually add new name to custom generated set like all bones and all shape keys
+        type_list.add(new_name)
         return new_name, type_list
 
     return new_name
 
 
 def getAllBones(mode):
-    """Get list of all bones depending on Edit or Pose Mode"""
-    boneList = []
-
-    for arm in bpy.data.armatures:
-        if mode == 'POSE':
-            for bone in arm.bones:
-                boneList.append(bone.name)
-        else:  # mode == 'EDIT':
-            for bone in arm.edit_bones:
-                boneList.append(bone.name)
-
-    return boneList
+    """Get list of all bone names depending on Edit or Pose Mode"""
+    if mode == 'POSE':
+        return [bone.name for arm in bpy.data.armatures for bone in arm.bones]
+    else:  # mode == 'EDIT'
+        return [bone.name for arm in bpy.data.armatures for bone in arm.edit_bones]
 
 
 def getAllModifiers():
-    """get list of all modifiers"""
-    modifierList = []
-
-    for obj in bpy.data.objects:
-        for mod in obj.modifiers:
-            modifierList.append(mod.name)
-
-    return modifierList
+    """get list of all modifier names"""
+    return [mod.name for obj in bpy.data.objects for mod in obj.modifiers]
 
 
 def getAllShapeKeys():
-    """get list of all shape keys"""
-    shapeKeyNamesList = []
-
-    for key_grp in bpy.data.shape_keys:
-        for key in key_grp.key_blocks:
-            shapeKeyNamesList.append(key.name)
-
-    return shapeKeyNamesList
+    """get list of all shape key names"""
+    return [key.name for key_grp in bpy.data.shape_keys for key in key_grp.key_blocks]
 
 
 def getAllVertexGroups():
-    """get list of all vertex groups"""
-    vrtx_grp_names_list = []
-
-    for obj in bpy.data.objects:
-        for vrtGrp in obj.vertex_groups:
-            vrtx_grp_names_list.append(vrtGrp.name)
-
-    return vrtx_grp_names_list
+    """get list of all vertex group names"""
+    return [vg.name for obj in bpy.data.objects for vg in obj.vertex_groups]
 
 
 def getAllParticleNames():
-    """get list of all particle systems"""
-    particlesNamesList = []
-
-    for obj in bpy.data.objects:
-        for particle_system in obj.particle_systems:
-            particlesNamesList.append(particle_system.name)
-    return particlesNamesList
+    """get list of all particle system names"""
+    return [ps.name for obj in bpy.data.objects for ps in obj.particle_systems]
 
 
 def getAllParticleSettingsNames():
-    """get list of all particle settings"""
-    particlesNamesList = []
-    for par in bpy.data.particles:
-        particlesNamesList.append(par.name)
-
-    return particlesNamesList
+    """get list of all particle settings names"""
+    return [par.name for par in bpy.data.particles]
 
 
 def getAllUvMaps():
-    uvNamesList = []
-    for obj in bpy.data.objects:
-        if obj.type != 'MESH':
-            continue
-        for uv in obj.data.uv_layers:
-            uvNamesList.append(uv)
-    return uvNamesList
+    """get list of all UV map names"""
+    return [uv.name for obj in bpy.data.objects if obj.type == 'MESH'
+            for uv in obj.data.uv_layers]
 
 
 def getAllColorAttributes():
-    colorAttributesList = []
-
-    for obj in bpy.data.objects:
-        if obj.type != 'MESH':
-            continue
-        for color_attribute in obj.data.color_attributes:
-            colorAttributesList.append(color_attribute)
-
-    return colorAttributesList
+    """get list of all color attribute names"""
+    return [ca.name for obj in bpy.data.objects if obj.type == 'MESH'
+            for ca in obj.data.color_attributes]
 
 
 def getAllAttributes():
-    attributesList = []
-
-    for obj in bpy.data.objects:
-        if obj.type != 'MESH':
-            continue
-        for color_attribute in obj.data.color_attributes:
-            attributesList.append(color_attribute)
-
-    return attributesList
+    """get list of all attribute names"""
+    return [attr.name for obj in bpy.data.objects if obj.type == 'MESH'
+            for attr in obj.data.attributes]
 
 
 def getAllDataNames():
-    """get list of all data"""
-    dataList = []
-
-    for obj in bpy.data.objects:
-        if obj.data is not None:
-            dataList.append(obj.data.name)
-
-    return dataList
+    """get list of all data names"""
+    return [obj.data.name for obj in bpy.data.objects if obj.data is not None]
