@@ -3,7 +3,7 @@ import time
 import bpy
 
 from .renaming_operators import switch_to_edit_mode
-from ..operators.renaming_utilities import get_renaming_list, trim_string, call_renaming_popup, call_error_popup, rename_data_if_enabled, log_timing
+from ..operators.renaming_utilities import get_renaming_list, trim_string, call_renaming_popup, call_error_popup, rename_data_if_enabled, update_bone_drivers, log_timing
 
 
 class VIEW3D_OT_trim_string(bpy.types.Operator):
@@ -32,6 +32,8 @@ class VIEW3D_OT_trim_string(bpy.types.Operator):
                     new_name = trim_string(entity.name, wm.renaming_trim_indices)
                     entity.name = new_name
                     rename_data_if_enabled(wm, entity)
+                    if wm.renaming_object_types == 'BONE':
+                        update_bone_drivers(old_name, entity.name)
                     msg.add_message(old_name, entity.name)
 
         log_timing(context, "trim_string", t_start, len(renaming_list))

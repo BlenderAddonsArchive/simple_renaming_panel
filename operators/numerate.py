@@ -4,7 +4,7 @@ import bpy
 
 from .renaming_operators import switch_to_edit_mode
 from .. import __package__ as base_package
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled, log_timing
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled, update_bone_drivers, log_timing
 
 
 class VIEW3D_OT_renaming_numerate(bpy.types.Operator):
@@ -44,6 +44,8 @@ class VIEW3D_OT_renaming_numerate(bpy.types.Operator):
                         '{num:{fill}{width}}'.format(num=(i * step) + start_number, fill='0', width=digits))
                     entity.name = new_name
                     rename_data_if_enabled(wm, entity)
+                    if wm.renaming_object_types == 'BONE':
+                        update_bone_drivers(oldName, entity.name)
                     msg.add_message(oldName, entity.name)
                     i = i + 1
 

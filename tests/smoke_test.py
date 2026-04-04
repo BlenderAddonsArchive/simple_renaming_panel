@@ -280,6 +280,66 @@ def test_search_replace_static_pattern():
 
 
 # ---------------------------------------------------------------------------
+# Test 7 – update_bone_drivers: driver paths updated after bone rename
+# ---------------------------------------------------------------------------
+
+def test_bone_rename_updates_drivers():
+    print("\n[Test 7] update_bone_drivers – FCurve data_path and bone_target updated")
+    PREFIX = "T7_"
+    purge_all_with_prefix(PREFIX)
+    reset_scene_props()
+
+    # Create armature with one bone.
+    arm_data = bpy.data.armatures.new(f"{PREFIX}Arm")
+    arm_obj = bpy.data.objects.new(f"{PREFIX}Arm", arm_data)
+    bpy.context.scene.collection.objects.link(arm_obj)
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.object.mode_set(mode='EDIT')
+    b = arm_data.edit_bones.new(f"{PREFIX}OldBone")
+    b.head = (0, 0, 0)
+    b.tail = (0, 0, 0.1)
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    # Add a driver FCurve on the armature object that drives X location,
+    # using the bone name in data_path and bone_target.
+    fcurve = arm_obj.driver_add('location', 0)
+    fcurve.data_path = f'pose.bones["{PREFIX}OldBone"].location[0]'
+    drv = fcurve.driver
+    drv.type = 'AVERAGE'
+    var = drv.variables.new()
+    var.type = 'TRANSFORMS'
+    target = var.targets[0]
+    target.id = arm_obj
+    target.bone_target = f"{PREFIX}OldBone"
+
+    # Rename the bone via the extension.
+    scene_prop("renaming_object_types", "BONE")
+    scene_prop("renaming_new_name", f"{PREFIX}NewBone")
+    scene_prop("renaming_use_enumerate", False)
+    bpy.ops.renaming.name_replace()
+
+    # Find the driver FCurve (data_path may have changed).
+    updated_fcurve = None
+    if arm_obj.animation_data:
+        for fc in arm_obj.animation_data.drivers:
+            if f"{PREFIX}NewBone" in fc.data_path:
+                updated_fcurve = fc
+                break
+
+    check(updated_fcurve is not None,
+          f"FCurve data_path updated to contain '{PREFIX}NewBone'")
+
+    if updated_fcurve is not None:
+        bt = updated_fcurve.driver.variables[0].targets[0].bone_target
+        check(bt == f"{PREFIX}NewBone",
+              f"bone_target updated to '{PREFIX}NewBone' — got '{bt}'")
+        check(f"{PREFIX}OldBone" not in updated_fcurve.data_path,
+              "Old bone name no longer present in data_path")
+
+    purge_all_with_prefix(PREFIX)
+
+
+# ---------------------------------------------------------------------------
 # Run
 # ---------------------------------------------------------------------------
 
@@ -299,6 +359,7 @@ if __name__ == "__main__":
     test_numerate_bones_unique()
     test_get_all_attributes()
     test_search_replace_static_pattern()
+    test_bone_rename_updates_drivers()
 
     print(f"\n{'='*50}")
     if failures:
@@ -307,5 +368,5 @@ if __name__ == "__main__":
             print(f"  - {f}")
         sys.exit(1)
     else:
-        print(f"All 6 tests passed.")
+        print(f"All 7 tests passed.")
         sys.exit(0)

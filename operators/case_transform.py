@@ -3,7 +3,7 @@ import re
 import bpy
 
 from .renaming_operators import switch_to_edit_mode
-from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled
+from ..operators.renaming_utilities import get_renaming_list, call_renaming_popup, call_error_popup, rename_data_if_enabled, update_bone_drivers
 
 
 # ---------------------------------------------------------------------------
@@ -91,6 +91,8 @@ class _CaseOperatorBase(bpy.types.Operator):
                 old_name = entity.name
                 entity.name = self._transform(entity.name)
                 rename_data_if_enabled(scene, entity)
+                if scene.renaming_object_types == 'BONE':
+                    update_bone_drivers(old_name, entity.name)
                 msg.add_message(old_name, entity.name)
 
         call_renaming_popup(context)
