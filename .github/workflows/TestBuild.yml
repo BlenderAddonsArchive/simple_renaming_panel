@@ -23,8 +23,9 @@ jobs:
 
       - name: Zip addon
         run: |
-          zip -r simple_renaming_${{ steps.version.outputs.version }}_${{ steps.vars.outputs.short_sha }}.zip \
-            simple_renaming \
+          cd simple_renaming
+          cd ..
+          zip -r simple_renaming_${{ steps.version.outputs.version }}_${{ steps.vars.outputs.short_sha }}.zip simple_renaming \
             -x "simple_renaming/.git*" \
             -x "simple_renaming/.*/*" \
             -x "simple_renaming/tests/*" \
