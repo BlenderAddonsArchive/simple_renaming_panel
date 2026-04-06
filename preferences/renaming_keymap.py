@@ -26,10 +26,6 @@ class BUTTON_OT_change_key(bpy.types.Operator):
 
     property_prefix: bpy.props.StringProperty()
 
-    def __init__(self):
-        self.prefs = None
-        self.my_event = ''
-
     def invoke(self, context, event):
         prefs = context.preferences.addons[base_package].preferences
         self.prefs = prefs
