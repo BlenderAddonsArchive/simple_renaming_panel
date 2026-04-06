@@ -9,12 +9,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          path: ${{ github.event.repository.name }}
+          path: simple_renaming  # Checkout directly into a folder named "simple_renaming"
 
       - name: Read version from blender_manifest.toml
         id: version
         run: |
-          manifest_version=$(grep '^version' ${{ github.event.repository.name }}/blender_manifest.toml | sed 's/version = "\(.*\)"/\1/')
+          manifest_version=$(grep '^version' simple_renaming/blender_manifest.toml | sed 's/version = "\(.*\)"/\1/')
           echo "manifest_version=$manifest_version" >> $GITHUB_OUTPUT
 
       - name: Set short SHA
@@ -23,18 +23,16 @@ jobs:
 
       - name: Zip addon
         run: |
-          version_with_underscores=$(echo ${{ steps.version.outputs.manifest_version }} | tr '.' '_')
-          zip -r \
-            simple_renaming_${version_with_underscores}_${{ steps.vars.outputs.short_sha }}.zip \
-            ${{ github.event.repository.name }} \
-            -x "${{ github.event.repository.name }}/.git*" \
-            -x "${{ github.event.repository.name }}/.*/*" \
-            -x "${{ github.event.repository.name }}/tests/*" \
-            -x "${{ github.event.repository.name }}/venv/*"
+          zip -r simple_renaming_v${{ steps.version.outputs.manifest_version }}_${{ steps.vars.outputs.short_sha }}.zip \
+            simple_renaming \
+            -x "simple_renaming/.git*" \
+            -x "simple_renaming/.*/*" \
+            -x "simple_renaming/tests/*" \
+            -x "simple_renaming/venv/*"
 
       - name: Upload zip as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: simple_renaming_${{ steps.version.outputs.manifest_version }}_${{ steps.vars.outputs.short_sha }}
-          path: simple_renaming_${{ steps.version.outputs.manifest_version }}_${{ steps.vars.outputs.short_sha }}.zip
+          name: simple_renaming_v${{ steps.version.outputs.manifest_version }}_${{ steps.vars.outputs.short_sha }}
+          path: simple_renaming_v${{ steps.version.outputs.manifest_version }}_${{ steps.vars.outputs.short_sha }}.zip
           retention-days: 7
