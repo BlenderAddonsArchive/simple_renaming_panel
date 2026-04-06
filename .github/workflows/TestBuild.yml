@@ -8,31 +8,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          path: simple_renaming
 
       - name: Read version from blender_manifest.toml
         id: version
         run: |
-          VERSION=$(python3 -c "import tomllib; f=open('blender_manifest.toml','rb'); print(tomllib.load(f)['version'])")
+          VERSION=$(python3 -c "import tomllib; f=open('simple_renaming/blender_manifest.toml','rb'); print(tomllib.load(f)['version'])")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set short SHA
         id: vars
         run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      - name: Create addon folder structure
-        run: |
-          mkdir -p simple_renaming
-          cp -r . simple_renaming/
-          # Remove excluded folders
-          rm -rf simple_renaming/.git
-          rm -rf simple_renaming/.*
-          rm -rf simple_renaming/tests
-          rm -rf simple_renaming/venv
-
       - name: Zip addon
         run: |
           zip -r simple_renaming_${{ steps.version.outputs.version }}_${{ steps.vars.outputs.short_sha }}.zip \
-            simple_renaming
+            simple_renaming \
+            -x "simple_renaming/.git*" \
+            -x "simple_renaming/.*/*" \
+            -x "simple_renaming/tests/*" \
+            -x "simple_renaming/venv/*"
 
       - name: Upload zip as artifact
         uses: actions/upload-artifact@v4
