@@ -24,12 +24,11 @@ jobs:
       - name: Zip addon
         run: |
           cd simple_renaming
-          cd ..
-          zip -r simple_renaming_${{ steps.version.outputs.version }}_${{ steps.vars.outputs.short_sha }}.zip simple_renaming \
-            -x "simple_renaming/.git*" \
-            -x "simple_renaming/.*/*" \
-            -x "simple_renaming/tests/*" \
-            -x "simple_renaming/venv/*"
+          zip -r ../simple_renaming_${{ steps.version.outputs.version }}_${{ steps.vars.outputs.short_sha }}.zip . \
+            -x ".git*" \
+            ".*/*" \
+            "tests/*" \
+            "venv/*"
 
       - name: Upload zip as artifact
         uses: actions/upload-artifact@v4
