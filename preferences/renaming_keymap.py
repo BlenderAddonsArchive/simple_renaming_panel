@@ -76,23 +76,35 @@ def add_key_to_keymap(idname, kmi, km, active=True):
 def remove_key(context, idname, properties_name):
     """Removes addon hotkeys from the keymap"""
     wm = bpy.context.window_manager
-    km = wm.keyconfigs.active.keymaps['Window']
+    kc = wm.keyconfigs.active
+    if kc is None:
+        return
+    km = kc.keymaps.get('Window')
+    if km is None:
+        return
 
-    for kmi in km.keymap_items:
-        if kmi.idname == idname and kmi.properties.name == properties_name:
-            km.keymap_items.remove(kmi)
+    items_to_remove = [kmi for kmi in km.keymap_items
+                       if kmi.idname == idname and kmi.properties.name == properties_name]
+    for kmi in items_to_remove:
+        km.keymap_items.remove(kmi)
 
 
 def remove_keymap():
     """Removes keys from the keymap. Currently, this is only called when unregistering the addon. """
     # only works for menus and pie menus
     wm = bpy.context.window_manager
-    km = wm.keyconfigs.active.keymaps['Window']
+    kc = wm.keyconfigs.active
+    if kc is None:
+        return
+    km = kc.keymaps.get('Window')
+    if km is None:
+        return
 
-    for kmi in km.keymap_items:
-        if hasattr(kmi.properties, 'name') and kmi.properties.name in ['VIEW3D_PT_tools_renaming_panel',
-                                                                       'VIEW3D_PT_tools_type_suffix']:
-            km.keymap_items.remove(kmi)
+    items_to_remove = [kmi for kmi in km.keymap_items
+                       if hasattr(kmi.properties, 'name') and kmi.properties.name in
+                       ['VIEW3D_PT_tools_renaming_panel', 'VIEW3D_PT_tools_type_suffix']]
+    for kmi in items_to_remove:
+        km.keymap_items.remove(kmi)
 
 
 class REMOVE_OT_hotkey(bpy.types.Operator):
