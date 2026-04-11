@@ -53,7 +53,11 @@ class BUTTON_OT_change_key(bpy.types.Operator):
 
 
 def add_keymap():
-    km = bpy.context.window_manager.keyconfigs.active.keymaps.new(name="Window")
+    wm = bpy.context.window_manager
+    kc = wm.keyconfigs.addon
+    if kc is None:
+        return
+    km = kc.keymaps.new(name="Window")
     prefs = bpy.context.preferences.addons[base_package].preferences
 
     kmi = km.keymap_items.new(idname='wm.call_panel', type=prefs.renaming_panel_type, value='PRESS',
@@ -76,7 +80,7 @@ def add_key_to_keymap(idname, kmi, km, active=True):
 def remove_key(context, idname, properties_name):
     """Removes addon hotkeys from the keymap"""
     wm = bpy.context.window_manager
-    kc = wm.keyconfigs.active
+    kc = wm.keyconfigs.addon
     if kc is None:
         return
     km = kc.keymaps.get('Window')
@@ -91,31 +95,19 @@ def remove_key(context, idname, properties_name):
 
 def remove_keymap():
     """Removes keys from the keymap. Currently, this is only called when unregistering the addon. """
-    # only works for menus and pie menus
-    try:
-        wm = bpy.context.window_manager
-        kc = wm.keyconfigs.active
-    except Exception:
-        return
+    wm = bpy.context.window_manager
+    kc = wm.keyconfigs.addon
     if kc is None:
         return
     km = kc.keymaps.get('Window')
     if km is None:
         return
 
-    panel_names = {'VIEW3D_PT_tools_renaming_panel', 'VIEW3D_PT_tools_type_suffix'}
-    items_to_remove = []
-    for kmi in km.keymap_items:
-        try:
-            if hasattr(kmi.properties, 'name') and kmi.properties.name in panel_names:
-                items_to_remove.append(kmi)
-        except Exception:
-            pass
+    items_to_remove = [kmi for kmi in km.keymap_items
+                       if hasattr(kmi.properties, 'name') and kmi.properties.name in
+                       {'VIEW3D_PT_tools_renaming_panel', 'VIEW3D_PT_tools_type_suffix'}]
     for kmi in items_to_remove:
-        try:
-            km.keymap_items.remove(kmi)
-        except Exception:
-            pass
+        km.keymap_items.remove(kmi)
 
 
 class REMOVE_OT_hotkey(bpy.types.Operator):
