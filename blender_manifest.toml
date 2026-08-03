@@ -25,9 +25,13 @@ copyright = [
 paths_exclude_pattern = [
     "__pycache__/",
     "/.git/",
+    "/.gitignore",
+    "/.gitattributes",
     "/*.zip",
     "/tests/",
     "/tools/",
     "/venv/",
     "/.claude/",
+    "/.github/",
+    "/CHANGELOG.md",
 ]
