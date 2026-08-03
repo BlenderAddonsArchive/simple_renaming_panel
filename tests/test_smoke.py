@@ -2,7 +2,7 @@
 Smoke tests for simple_renaming performance optimisations.
 
 Run headlessly:
-    /path/to/blender --background --python tests/smoke_test.py
+    /path/to/blender --background --python tests/test_smoke.py
 
 The script discovers the already-loaded addon, builds a small scene for each
 test, exercises every changed code path, and exits with code 0 (pass) or 1
@@ -808,7 +808,9 @@ def test_name_replace_letters_mode_collision_avoidance():
 
     addon_prefs = bpy.context.preferences.addons[ADDON_ID].preferences
     prev_use_letters = addon_prefs.numerate_use_letters
+    prev_letters_upper = addon_prefs.numerate_letters_upper
     addon_prefs.numerate_use_letters = True
+    addon_prefs.numerate_letters_upper = True
     try:
         scene_prop("renaming_object_types", "OBJECT")
         scene_prop("renaming_only_selection", True)
@@ -818,6 +820,7 @@ def test_name_replace_letters_mode_collision_avoidance():
         bpy.ops.renaming.name_replace()
     finally:
         addon_prefs.numerate_use_letters = prev_use_letters
+        addon_prefs.numerate_letters_upper = prev_letters_upper
 
     check(new_obj.name == f"{PREFIX}bone_B",
           f"Collision-avoidance search skipped the pre-existing '_A' name in letters mode — got '{new_obj.name}'")
@@ -844,8 +847,10 @@ def test_variable_replacer_letters_mode():
 
     addon_prefs = bpy.context.preferences.addons[ADDON_ID].preferences
     prev_use_letters = addon_prefs.numerate_use_letters
+    prev_letters_upper = addon_prefs.numerate_letters_upper
     prev_start = addon_prefs.numerate_start_number
     addon_prefs.numerate_use_letters = True
+    addon_prefs.numerate_letters_upper = True
     addon_prefs.numerate_start_number = 1
     try:
         scene_prop("renaming_object_types", "OBJECT")
@@ -854,6 +859,7 @@ def test_variable_replacer_letters_mode():
         bpy.ops.renaming.name_replace()
     finally:
         addon_prefs.numerate_use_letters = prev_use_letters
+        addon_prefs.numerate_letters_upper = prev_letters_upper
         addon_prefs.numerate_start_number = prev_start
 
     letters_got = sorted(o.name[-1] for o in objs)
