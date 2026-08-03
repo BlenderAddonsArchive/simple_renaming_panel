@@ -54,7 +54,7 @@ def update_suf_pre_key(self, context):
 
 
 def update_panel_category(self, context):
-    """Update panel tab for collider tools"""
+    """Update panel tab for renaming tools"""
     from ..ui.renaming_panels import VIEW3D_PT_tools_renaming_panel, VIEW3D_PT_tools_type_suffix
 
     panels = [
